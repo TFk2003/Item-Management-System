@@ -1,0 +1,176 @@
+﻿@model MyAppMVC.Models.Client
+
+@{
+    ViewData["Title"] = "Create Client";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-plus-circle"></i> Create New Client</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="FirstName" class="form-label">
+                                        <i class="bi bi-tag"></i> First Name *
+                                    </label>
+                                    <input asp-for="FirstName" class="form-control" placeholder="Enter client First Name" required />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                    <div class="form-text">This will be used to group your items</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="LastName" class="form-label">
+                                        <i class="bi bi-tag"></i> Last Name *
+                                    </label>
+                                    <input asp-for="LastName" class="form-control" placeholder="Enter client Last Name" required />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                    <div class="form-text">This will be used to group your items</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-palette"></i> Color
+                                    </label>
+                                    <input type="color" class="form-control form-control-color"
+                                           value="#3498db" title="Choose client color">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">
+                                <i class="bi bi-envelope"></i> Email
+                            </label>
+                            <input asp-for="Email" class="form-control" rows="3"
+                                      placeholder="Email for this client" required type="email"/>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label">
+                                <i class="bi bi-telephone"></i> Phone Number
+                            </label>
+                            <input asp-for="PhoneNumber" class="form-control" rows="3"
+                                   placeholder="Phone Number for this client" required/>
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Company" class="form-label">
+                                <i class="bi bi-building"></i> Company
+                            </label>
+                            <input asp-for="Company" class="form-control" rows="3"
+                                   placeholder="Company for this client" required/>
+                            <span asp-validation-for="Company" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label">
+                                <i class="bi bi-house"></i> Address
+                            </label>
+                            <textarea asp-for="Address" class="form-control" rows="3"
+                                   placeholder="Address for this client" required ></textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Client
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-eye"></i> Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md">
+                            <div class="border rounded p-3">
+                                <h6>Client Card Preview</h6>
+                                <div class="d-flex align-items-center mt-2">
+                                    <div class="category-preview-color me-2" style="background-color: #3498db; width: 20px; height: 20px; border-radius: 50%;"></div>
+                                    <div>
+                                        <strong id="previewName">New Client</strong><br>
+                                        <small class="text-muted" id="previewEmail">Email will appear here</small><br>
+                                        <small class="text-muted" id="previewPhone">PhoneNumber will appear here</small><br>
+                                        <small class="text-muted" id="previewCompany">Company will appear here</small><br>
+                                        <small class="text-muted" id="previewAddress">Address will appear here</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Live preview
+            $('#FirstName, #LastName').on('input', function() {
+                const firstName = $('#FirstName').val().trim();
+                const lastName = $('#LastName').val().trim();
+
+                // Combine names, defaulting to 'New Client' if both are empty
+                const fullName = (firstName + ' ' + lastName).trim();
+                $('#previewName').text(fullName || 'New Client');
+            });
+
+            $('#Email').on('input', function() {
+                $('#previewEmail').text($(this).val() || 'Email will appear here');
+            });
+
+            $('#PhoneNumber').on('input', function() {
+                $('#previewPhone').text($(this).val() || 'Phone Number will appear here');
+            });
+
+            $('#Company').on('input', function() {
+                $('#previewCompany').text($(this).val() || 'Company will appear here');
+            });
+
+            $('#Address').on('input', function() {
+                $('#previewAddress').text($(this).val() || 'Address will appear here');
+            });
+
+            $('.form-check-input').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#previewStatus').removeClass('bg-secondary').addClass('bg-success').text('Active');
+                } else {
+                    $('#previewStatus').removeClass('bg-success').addClass('bg-secondary').text('Inactive');
+                }
+            });
+
+            $('.form-control-color').change(function() {
+                $('.category-preview-color').css('background-color', $(this).val());
+            });
+
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+        });
+    </script>
+}

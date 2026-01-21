@@ -1,0 +1,227 @@
+﻿@{
+    ViewData["Title"] = "Item Management Dashboard";
+}
+<div class="container-fluid">
+    <h1 class="display-4 mb-4">Item Management System</h1>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-item-center">
+                        <div>
+                            <h6 class="card-title">Total Items</h6>
+                            <h2 class="card-text">@ViewBag.TotalItems</h2>
+                        </div>
+						<i class="bi bi-box-seam fs-1"></i>
+                    </div>
+                    <a asp-controller="Item" asp-action="Index" class="text-white stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-item-center">
+                        <div>
+                            <h6 class="card-title">Total Clients</h6>
+                            <h2 class="card-text">@ViewBag.TotalClients</h2>
+                        </div>
+                        <i class="bi bi-people fs-1"></i>
+                    </div>
+                    <a asp-controller="Clients" asp-action="Index" class="text-white stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Low Stock Items</h6>
+                            <h2 class="card-text">@ViewBag.LowStockItems</h2>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                    <a asp-controller="Item" asp-action="LowStock" class="text-white stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total Categories</h6>
+                            <h2 class="card-text">@ViewBag.TotalCategories</h2>
+                        </div>
+                        <i class="bi bi-tags fs-1"></i>
+                    </div>
+                    <a asp-controller="Categories" asp-action="Index" class="text-white stretched-link"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Item" asp-action="Create" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-plus-circle"></i> Add New Item
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Clients" asp-action="Create" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-person-plus"></i> Add New Client
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="PurchaseOrders" asp-action="Create" class="btn btn-warning btn-lg w-100">
+                                <i class="bi bi-cart-plus"></i> Create Purchase Order
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Reports" asp-action="Dashboard" class="btn btn-info btn-lg w-100">
+                                <i class="bi bi-graph-up"></i> View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Recent Items</h5>
+                    <a asp-controller="Item" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.RecentItems != null && ViewBag.RecentItems.Count > 0)
+                    {
+                        <div class="list-group">
+                            @foreach (var item in ViewBag.RecentItems)
+                            {
+                                <a asp-controller="Item" asp-action="Details" asp-route-id="@item.Id"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@item.Name</h6>
+                                        <small>@item.Price.ToString("C")</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        Stock: @item.StockQuantity |
+                                        Category: @item.Category?.Name
+                                    </small>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No items found. <a asp-controller="Item" asp-action="Create">Add your first item</a></p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Recent Clients</h5>
+                    <a asp-controller="Clients" asp-action="Index" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.RecentClients != null && ViewBag.RecentClients.Count > 0)
+                    {
+                        <div class="list-group">
+                            @foreach (var client in ViewBag.RecentClients)
+                            {
+                                <a asp-controller="Clients" asp-action="Details" asp-route-id="@client.Id"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@client.FirstName @client.LastName</h6>
+                                        <small>@client.Email</small>
+                                    </div>
+                                    <small class="text-muted">Company: @client.Company</small>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No clients found. <a asp-controller="Clients" asp-action="Create">Add your first client</a></p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    @if (ViewBag.LowStockItemsList != null && ViewBag.LowStockItemsList.Count > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5><i class="bi bi-exclamation-triangle"></i> Low Stock Alert</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Current Stock</th>
+                                        <th>Reorder Level</th>
+                                        <th>Category</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in ViewBag.LowStockItemsList)
+                                    {
+                                        <tr>
+                                            <td>@item.Name</td>
+                                            <td class="text-danger"><strong>@item.StockQuantity</strong></td>
+                                            <td>@item.ReorderLevel</td>
+                                            <td>@item.Category?.Name</td>
+                                            <td>
+                                                <a asp-controller="PurchaseOrders" asp-action="Create" asp-route-itemId="@item.Id"
+                                                   class="btn btn-sm btn-outline-danger">Reorder</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<style>
+    .card {
+        transition: transform 0.2s;
+        height: 100%;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+    .card-title {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-text {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+</style>

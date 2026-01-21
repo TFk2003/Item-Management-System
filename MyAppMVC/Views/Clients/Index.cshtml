@@ -1,0 +1,243 @@
+﻿@model IEnumerable<MyAppMVC.Models.Client>
+
+@{
+    ViewData["Title"] = "Clients";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-people"></i> Clients</h1>
+            <p class="text-muted">Manage product clients for inventory</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add New Client
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search clients..." />
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="True">Active</option>
+                        <option value="False">Inactive</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <a href="#" class="sort-link" data-sort="first_name">
+                                        <i class="bi bi-arrow-down-up"></i> @Html.DisplayNameFor(model => model.FirstName)
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="#" class="sort-link" data-sort="last_name">
+                                        <i class="bi bi-arrow-down-up"></i> @Html.DisplayNameFor(model => model.LastName)
+                                    </a>
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Email)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.PhoneNumber)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Company)
+                                </th>
+                                <th>
+                                    @Html.DisplayNameFor(model => model.Address)
+                                </th>
+                                <th>
+                                    <a href="#" class="sort-link" data-sort="status">
+                                        <i class="bi bi-arrow-down-up"></i> Status
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="#" class="sort-link" data-sort="date">
+                                        <i class="bi bi-arrow-down-up"></i> Created
+                                    </a>
+                                </th>
+                                <th>Items Count</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="category-row" data-status="@item.IsActive.ToString().ToLower()">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="category-color me-2" style="background-color: @GetCategoryColor(item.Id); width: 12px; height: 12px; border-radius: 50%;"></div>
+                                            <strong>@Html.DisplayFor(modelItem => item.FirstName)</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="category-color me-2" style="background-color: @GetCategoryColor(item.Id); width: 12px; height: 12px; border-radius: 50%;"></div>
+                                            <strong>@Html.DisplayFor(modelItem => item.LastName)</strong>
+                                        </div>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 250px;" title="@item.Email">
+                                        @(string.IsNullOrEmpty(item.Email) ? "-" : item.Email)
+                                    </td>
+                                     <td class="text-truncate" style="max-width: 250px;" title="@item.PhoneNumber">
+                                        @(string.IsNullOrEmpty(item.PhoneNumber) ? "-" : item.PhoneNumber)
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 250px;" title="@item.Company">
+                                        @(string.IsNullOrEmpty(item.Company) ? "-" : item.Company)
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 250px;" title="@item.Address">
+                                        @(string.IsNullOrEmpty(item.Address) ? "-" : item.Address)
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(item.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @item.CreatedDate.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@(item.ItemClients?.Count ?? 0) items</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Details" asp-route-id="@item.Id"
+                                               class="btn btn-outline-info" data-bs-toggle="tooltip" title="Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id"
+                                               class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span class="text-muted">
+                            Showing <strong>@Model.Count()</strong> clients
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge bg-success">@Model.Count(c => c.IsActive) Active</span>
+                        <span class="badge bg-secondary ms-2">@Model.Count(c => !c.IsActive) Inactive</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-tags display-1 text-muted"></i>
+                    <h3 class="mt-3">No categories found</h3>
+                    <p class="text-muted">Get started by creating your first category</p>
+                    <a asp-action="Create" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle"></i> Create Category
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetCategoryColor(int id)
+    {
+        var colors = new[] { "#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#d35400", "#34495e" };
+        return colors[id % colors.Length];
+    }
+}
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Search functionality
+            $('#searchInput').on('keyup', function() {
+                var searchText = $(this).val().toLowerCase();
+                $('.category-row').each(function() {
+                    var rowText = $(this).text().toLowerCase();
+                    $(this).toggle(rowText.indexOf(searchText) > -1);
+                });
+            });
+
+            // Clear search
+            $('#clearSearch').click(function() {
+                $('#searchInput').val('');
+                $('.category-row').show();
+            });
+
+            // Status filter
+            $('#statusFilter').change(function() {
+                var filterValue = $(this).val();
+                if (filterValue === '') {
+                    $('.category-row').show();
+                } else {
+                    var boolFilter = (filterValue.toLowerCase() === 'true');
+                    $('.category-row').each(function() {
+                        var rowStatus = $(this).data('status');
+                        $(this).toggle(rowStatus === boolFilter);
+                    });
+                }
+            });
+
+            // Simple sorting (you can enhance this with AJAX for server-side sorting)
+            $('.sort-link').click(function(e) {
+                e.preventDefault();
+                alert('Sorting functionality would be implemented here with AJAX call.');
+
+            });
+        });
+    </script>
+
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            cursor: pointer;
+        }
+
+        .category-color {
+            transition: transform 0.2s;
+        }
+
+        .category-row:hover .category-color {
+            transform: scale(1.3);
+        }
+
+        .btn-group .btn {
+            border-radius: 4px !important;
+            margin: 0 2px;
+        }
+    </style>
+}

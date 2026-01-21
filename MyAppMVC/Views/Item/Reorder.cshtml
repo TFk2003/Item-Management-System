@@ -1,0 +1,230 @@
+﻿@model MyAppMVC.ViewModels.ReorderViewModel
+
+@{
+    ViewData["Title"] = "Reorder Item";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h4><i class="bi bi-cart-plus"></i> Reorder Item</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Item Info -->
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5>@Model.ItemName</h5>
+                                <p class="mb-0">
+                                    Current Stock: <span class="badge @(Model.CurrentStock == 0 ? "bg-danger" : "bg-warning")">@Model.CurrentStock</span> |
+                                    Reorder Level: <span class="badge bg-secondary">@Model.ReorderLevel</span>
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">Item ID: @Model.ItemId</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Status -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-danger">@(Model.ReorderLevel - Model.CurrentStock)</h1>
+                                    <p class="card-text">Units Needed</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h1 class="display-4 text-success">@Model.RecommendedReorder</h1>
+                                    <p class="card-text">Recommended Order</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reorder Form -->
+                    <form asp-action="Reorder" method="post">
+                        <input type="hidden" asp-for="ItemId" />
+                        <input type="hidden" asp-for="ItemName" />
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-box"></i> Quantity to Order
+                            </label>
+                            <div class="input-group">
+                                <input type="number" asp-for="QuantityToOrder" class="form-control"
+                                       min="1" value="@Model.RecommendedReorder" required />
+                                <button type="button" class="btn btn-outline-secondary"
+                                        onclick="calculateOptimalOrder()">
+                                    <i class="bi bi-calculator"></i> Calculate
+                                </button>
+                            </div>
+                            <span asp-validation-for="QuantityToOrder" class="text-danger"></span>
+                            <div class="form-text">
+                                Minimum order: 1 | Recommended: @Model.RecommendedReorder
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-truck"></i> Supplier
+                            </label>
+                            <select asp-for="SupplierId" class="form-select">
+                                <option value="">-- Select Supplier --</option>
+                                @foreach (var supplier in Model.Suppliers)
+                                {
+                                    <option value="@supplier.Id">@supplier.CompanyName</option>
+                                }
+                            </select>
+                            <span asp-validation-for="SupplierId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-calendar"></i> Expected Delivery Date
+                            </label>
+                            <input type="date" class="form-control"
+                                   value="@DateTime.Now.AddDays(7).ToString("yyyy-MM-dd")" />
+                            <div class="form-text">Leave blank for ASAP</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-chat-text"></i> Notes
+                            </label>
+                            <textarea class="form-control" rows="3"
+                                      placeholder="Any special instructions or notes..."></textarea>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="autoReceive" checked>
+                            <label class="form-check-label" for="autoReceive">
+                                Auto-receive stock when ordered
+                            </label>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="LowStock" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Low Stock
+                            </a>
+                            <div>
+                                <a asp-action="QuickReorder" asp-route-id="@Model.ItemId"
+                                   asp-route-quantity="10" class="btn btn-outline-success">
+                                    <i class="bi bi-lightning"></i> Quick Reorder (10)
+                                </a>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i> Place Order
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Summary Preview -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-receipt"></i> Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Item Details</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Item:</td>
+                                    <td><strong>@Model.ItemName</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Current Stock:</td>
+                                    <td><span class="badge bg-warning">@Model.CurrentStock</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Reorder Level:</td>
+                                    <td>@Model.ReorderLevel</td>
+                                </tr>
+                                <tr>
+                                    <td>Deficit:</td>
+                                    <td><span class="badge bg-danger">@(Model.ReorderLevel - Model.CurrentStock)</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Order Preview</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Quantity:</td>
+                                    <td id="previewQuantity">@Model.RecommendedReorder</td>
+                                </tr>
+                                <tr>
+                                    <td>New Stock:</td>
+                                    <td>
+                                        <span class="badge bg-success" id="previewNewStock">
+                                            @(Model.CurrentStock + Model.RecommendedReorder)
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Safety Buffer:</td>
+                                    <td>
+                                        <span class="badge bg-info" id="previewBuffer">
+                                            @(Model.CurrentStock + Model.RecommendedReorder - Model.ReorderLevel)
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        function calculateOptimalOrder() {
+            const currentStock = @Model.CurrentStock;
+            const reorderLevel = @Model.ReorderLevel;
+            const deficit = reorderLevel - currentStock;
+
+            // Calculate optimal order (deficit + 50% buffer)
+            const optimalOrder = Math.max(deficit * 1.5, 10);
+            const roundedOrder = Math.ceil(optimalOrder / 5) * 5; // Round to nearest 5
+
+            $('#QuantityToOrder').val(roundedOrder);
+            updatePreview(roundedOrder);
+        }
+
+        function updatePreview(quantity) {
+            const currentStock = @Model.CurrentStock;
+            const reorderLevel = @Model.ReorderLevel;
+
+            $('#previewQuantity').text(quantity);
+            $('#previewNewStock').text(currentStock + quantity);
+            $('#previewBuffer').text((currentStock + quantity) - reorderLevel);
+        }
+
+        $(document).ready(function() {
+            // Update preview when quantity changes
+            $('#QuantityToOrder').on('input', function() {
+                updatePreview(parseInt($(this).val()) || 0);
+            });
+
+            // Auto-calculate on page load
+            calculateOptimalOrder();
+        });
+    </script>
+}

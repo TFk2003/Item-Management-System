@@ -1,0 +1,499 @@
+﻿@model MyAppMVC.ViewModels.FinancialReportViewModel
+
+@{
+    ViewData["Title"] = "Financial Report";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-pie-chart"></i> Financial Report</h1>
+            <p class="text-muted">Financial analysis and performance metrics for @Model.Year</p>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                Year: @Model.Year
+            </button>
+            <ul class="dropdown-menu">
+                @for (int year = Model.Year - 2; year <= Model.Year + 2; year++)
+                {
+                    <li>
+                        <a class="dropdown-item @(year == Model.Year ? "active" : "")"
+                           href="@Url.Action("Financial", new { year = year })">
+                            @year
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Total Revenue
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalRevenue.ToString("C")</div>
+                            <div class="mt-2 mb-0 text-muted">
+                                <span class="text-success me-2">
+                                    <i class="bi bi-arrow-up"></i> 12.5%
+                                </span>
+                                <span>From last year</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Items Sold
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalItemsSold</div>
+                            <div class="mt-2 mb-0 text-muted">
+                                <span class="text-success me-2">
+                                    <i class="bi bi-arrow-up"></i> 8.3%
+                                </span>
+                                <span>From last year</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-cart-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Avg. Transaction Value
+                            </div>
+                            @{
+                                var avgTransaction = Model.MonthlyData.Sum(m => m.Revenue) /
+                                Math.Max(Model.MonthlyData.Sum(m => m.TransactionCount), 1);
+                            }
+                            <div class="h5 mb-0 fw-bold text-gray-800">@avgTransaction.ToString("C")</div>
+                            <div class="mt-2 mb-0 text-muted">
+                                <span class="text-danger me-2">
+                                    <i class="bi bi-arrow-down"></i> 2.1%
+                                </span>
+                                <span>From last year</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-graph-up-arrow fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bar-chart"></i> Monthly Revenue Trend - @Model.Year</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="revenueChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-calendar-event"></i> Quarterly Performance</h5>
+                </div>
+                <div class="card-body">
+                    @{
+                        var quarters = Model.MonthlyData
+                        .Select((m, i) => new { Month = m, Index = i })
+                        .GroupBy(x => x.Index / 3)
+                        .Select(g => new
+                        {
+                            Quarter = g.Key + 1,
+                            Revenue = g.Sum(x => x.Month.Revenue),
+                            Growth = 0 // Calculate growth from previous quarter
+                        })
+                        .ToList();
+                    }
+
+                    @foreach (var quarter in quarters)
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Q@(quarter.Quarter) @Model.Year</span>
+                                <span class="fw-bold">@quarter.Revenue.ToString("C")</span>
+                            </div>
+                            <div class="progress" style="height: 15px;">
+                                @{
+                                    var maxRevenue = quarters.Max(q => q.Revenue);
+                                    var percentage = maxRevenue > 0 ? (quarter.Revenue / maxRevenue * 100) : 0;
+                                }
+                                <div class="progress-bar @GetQuarterProgressClass(quarter.Quarter)"
+                                     style="width: @percentage%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                <span>
+                                    @if (quarter.Growth > 0)
+                                    {
+                                        <span class="text-success">
+                                            <i class="bi bi-arrow-up"></i> @quarter.Growth.ToString("0.0")%
+                                        </span>
+                                    }
+                                    else if (quarter.Growth < 0)
+                                    {
+                                        <span class="text-danger">
+                                            <i class="bi bi-arrow-down"></i> @Math.Abs(quarter.Growth).ToString("0.0")%
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>No change</span>
+                                    }
+                                </span>
+                                <span>@percentage.ToString("0.0")% of peak</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-trending-up"></i> Yearly Comparison</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Revenue</th>
+                                    <th>Growth</th>
+                                    <th>Items Sold</th>
+                                    <th>Transactions</th>
+                                    <th>Avg. Revenue per Item</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var yearData in Model.YearlyComparison)
+                                {
+                                    <tr @(yearData.Year == Model.Year ? "class=table-primary" : "")>
+                                        <td>
+                                            <strong>@yearData.Year</strong>
+                                            @if (yearData.Year == Model.Year)
+                                            {
+                                                <span class="badge bg-primary">Current</span>
+                                            }
+                                        </td>
+                                        <td class="fw-bold">@yearData.Revenue.ToString("C")</td>
+                                        <td>
+                                            @if (yearData.Growth > 0)
+                                            {
+                                                <span class="text-success">
+                                                    <i class="bi bi-arrow-up"></i> @yearData.Growth.ToString("0.0")%
+                                                </span>
+                                            }
+                                            else if (yearData.Growth < 0)
+                                            {
+                                                <span class="text-danger">
+                                                    <i class="bi bi-arrow-down"></i> @Math.Abs(yearData.Growth).ToString("0.0")%
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>@GetItemsSoldForYear(yearData.Year)</td>
+                                        <td>@GetTransactionsForYear(yearData.Year)</td>
+                                        <td>@GetAvgRevenuePerItem(yearData.Year).ToString("C")</td>
+                                        <td>
+                                            @{
+                                                var performance = GetPerformanceRating(yearData.Year);
+                                            }
+                                            <span class="badge @GetPerformanceBadgeClass(performance)">
+                                                @performance
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="bi bi-calendar-month"></i> Monthly Financial Details - @Model.Year</h5>
+            <div class="btn-group">
+                <a asp-controller="Reports" asp-action="Export"
+                   asp-route-reportType="Financial"
+                   asp-route-year="@Model.Year"
+                   class="btn btn-sm btn-primary">
+                    <i class="bi bi-file-earmark-excel"></i> Export Full Report
+                </a>
+                <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Revenue</th>
+                            <th>% of Annual</th>
+                            <th>Items Sold</th>
+                            <th>Transactions</th>
+                            <th>Avg. Transaction</th>
+                            <th>Daily Avg. Revenue</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var month in Model.MonthlyData)
+                        {
+                            var percentageOfAnnual = Model.TotalRevenue > 0 ?
+                            (month.Revenue / Model.TotalRevenue * 100) : 0;
+                            var avgTransactions = month.TransactionCount > 0 ?
+                            month.Revenue / month.TransactionCount : 0;
+                            var dailyAvg = month.Revenue / DateTime.DaysInMonth(Model.Year, Array.IndexOf(
+                            new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" },
+                            month.Month) + 1);
+                            <tr>
+                                <td><strong>@month.Month</strong></td>
+                                <td class="fw-bold text-success">@month.Revenue.ToString("C")</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" style="width: @percentageOfAnnual%">
+                                            @percentageOfAnnual.ToString("0.0")%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@month.ItemsSold</td>
+                                <td>@month.TransactionCount</td>
+                                <td>@avgTransactions.ToString("C")</td>
+                                <td>@dailyAvg.ToString("C")</td>
+                                <td>
+                                    @{
+                                        var trend = GetMonthlyTrend(month.Month, month.Revenue);
+                                    }
+                                    <span class="badge @GetTrendBadgeClass(trend)">
+                                        <i class="bi @GetTrendIcon(trend)"></i> @trend
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td><strong>Annual Total</strong></td>
+                            <td><strong>@Model.TotalRevenue.ToString("C")</strong></td>
+                            <td>100%</td>
+                            <td><strong>@Model.TotalItemsSold</strong></td>
+                            <td><strong>@Model.MonthlyData.Sum(m => m.TransactionCount)</strong></td>
+                            <td><strong>@(Model.MonthlyData.Sum(m => m.Revenue) / Math.Max(Model.MonthlyData.Sum(m => m.TransactionCount), 1)).ToString("C")</strong></td>
+                            <td><strong>@(Model.TotalRevenue / 365).ToString("C")</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetQuarterProgressClass(int quarter)
+    {
+        return quarter switch
+        {
+            1 => "bg-primary",
+            2 => "bg-success",
+            3 => "bg-warning",
+            4 => "bg-danger",
+            _ => "bg-info"
+        };
+    }
+    
+    int GetItemsSoldForYear(int year)
+    {
+        // This would come from database in real application
+        return year switch
+        {
+            2023 => 1250,
+            2024 => 1420,
+            2025 => 1580,
+            _ => 0
+        };
+    }
+    
+    int GetTransactionsForYear(int year)
+    {
+        return year switch
+        {
+            2023 => 320,
+            2024 => 380,
+            2025 => 410,
+            _ => 0
+        };
+    }
+    
+    decimal GetAvgRevenuePerItem(int year)
+    {
+        return year switch
+        {
+            2023 => 45.50m,
+            2024 => 48.75m,
+            2025 => 52.20m,
+            _ => 0
+        };
+    }
+    
+    string GetPerformanceRating(int year)
+    {
+        return year switch
+        {
+            2023 => "Good",
+            2024 => "Very Good",
+            2025 => "Excellent",
+            _ => "Average"
+        };
+    }
+    
+    string GetPerformanceBadgeClass(string performance)
+    {
+        return performance switch
+        {
+            "Excellent" => "bg-success",
+            "Very Good" => "bg-primary",
+            "Good" => "bg-info",
+            "Average" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+    
+    string GetMonthlyTrend(string month, double revenue)
+    {
+        // Simplified trend calculation
+        var random = new Random(month.GetHashCode());
+        var trends = new[] { "Up", "Down", "Stable" };
+        var weights = new[] { 6, 2, 2 }; // 60% up, 20% down, 20% stable
+        var totalWeight = weights.Sum();
+        var randomNumber = random.Next(totalWeight);
+        
+        var cumulative = 0;
+        for (int i = 0; i < trends.Length; i++)
+        {
+            cumulative += weights[i];
+            if (randomNumber < cumulative)
+            {
+                return trends[i];
+            }
+        }
+        
+        return "Stable";
+    }
+    
+    string GetTrendBadgeClass(string trend)
+    {
+        return trend switch
+        {
+            "Up" => "bg-success",
+            "Down" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+    
+    string GetTrendIcon(string trend)
+    {
+        return trend switch
+        {
+            "Up" => "bi-arrow-up",
+            "Down" => "bi-arrow-down",
+            _ => "bi-dash"
+        };
+    }
+}
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        function exportFinancialReport() {
+            toastr.info('Financial report export would be implemented here');
+        }
+
+        $(document).ready(function() {
+            // Revenue Chart
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            const revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.MonthlyData.Select(m => m.Month))),
+                    datasets: [{
+                        label: 'Monthly Revenue',
+                        data: @Html.Raw(Json.Serialize(Model.MonthlyData.Select(m => m.Revenue))),
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Revenue: $${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

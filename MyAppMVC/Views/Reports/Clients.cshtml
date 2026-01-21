@@ -1,0 +1,333 @@
+﻿@model MyAppMVC.ViewModels.ClientReportViewModel
+
+@{
+    ViewData["Title"] = "Client Report";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-people-fill"></i> Client Report</h1>
+            <p class="text-muted">Client analytics and purchase behavior</p>
+        </div>
+        <div>
+            <a asp-controller="Client" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Add New Client
+            </a>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.TotalClients</h1>
+                    <p class="card-text">Total Clients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.ActiveClients</h1>
+                    <p class="card-text">Active Clients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.TotalRevenue.ToString("C")</h1>
+                    <p class="card-text">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h1 class="display-4">@Model.AveragePurchaseValue.ToString("C")</h1>
+                    <p class="card-text">Avg. Purchase Value</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="bi bi-trophy"></i> Top Clients by Purchase Value</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Client</th>
+                            <th>Email</th>
+                            <th>Total Purchases</th>
+                            <th>Purchase Count</th>
+                            <th>Avg. Purchase</th>
+                            <th>Last Purchase</th>
+                            <th>Loyalty Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.TopClientsByValue.Count; i++)
+                        {
+                            var client = Model.TopClientsByValue[i];
+                            var avgPurchase = client.PurchaseCount > 0 ? client.TotalPurchases / client.PurchaseCount : 0;
+                            <tr>
+                                <td>
+                                    <span class="badge @GetRankBadgeClass(i + 1)">
+                                        #@(i + 1)
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>@client.ClientName</strong><br>
+                                    <small class="text-muted">ID: @client.ClientId</small>
+                                </td>
+                                <td>@client.Email</td>
+                                <td class="text-success fw-bold">@client.TotalPurchases.ToString("C")</td>
+                                <td><span class="badge bg-primary">@client.PurchaseCount</span></td>
+                                <td>@avgPurchase.ToString("C")</td>
+                                <td>
+                                    @if (client.LastPurchaseDate.HasValue)
+                                    {
+                                        <small>@client.LastPurchaseDate.Value.ToString("MMM dd, yyyy")</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Never</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var loyaltyLevel = GetLoyaltyLevel(client.TotalPurchases);
+                                    }
+                                    <span class="badge @GetLoyaltyBadgeClass(loyaltyLevel)">
+                                        @loyaltyLevel
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-pie-chart"></i> Client Segmentation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded">
+                                <h2 class="text-primary">@GetClientCountByValue("high")</h2>
+                                <small>High Value Clients</small>
+                                <div class="small text-muted">(>$1,000)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded">
+                                <h2 class="text-success">@GetClientCountByValue("medium")</h2>
+                                <small>Medium Value Clients</small>
+                                <div class="small text-muted">($100-$1,000)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded">
+                                <h2 class="text-warning">@GetClientCountByValue("low")</h2>
+                                <small>Low Value Clients</small>
+                                <div class="small text-muted">(<$100)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-activity"></i> Client Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Active vs Inactive Clients</h6>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success"
+                                 style="width: @(Model.TotalClients > 0 ? (Model.ActiveClients * 100 / Model.TotalClients) : 0)%">
+                                @Model.ActiveClients Active
+                            </div>
+                            <div class="progress-bar bg-secondary"
+                                 style="width: @(Model.TotalClients > 0 ? ((Model.TotalClients - Model.ActiveClients) * 100 / Model.TotalClients) : 0)%">
+                                @(Model.TotalClients - Model.ActiveClients) Inactive
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h6>Purchase Frequency</h6>
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Regular (Monthly)</span>
+                            <span>Occasional (Quarterly)</span>
+                            <span>Rare (Yearly)</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-primary" style="width: 40%">40%</div>
+                            <div class="progress-bar bg-info" style="width: 35%">35%</div>
+                            <div class="progress-bar bg-warning" style="width: 25%">25%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="bi bi-list-ul"></i> All Clients</h5>
+            <div class="btn-group">
+                <a asp-controller="Reports" asp-action="Export"
+                   asp-route-reportType="Clients"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export
+                </a>
+                <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+            <div class="input-group" style="width: 300px;">
+                <input type="text" class="form-control" placeholder="Search clients..." id="clientSearch">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table" id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Company</th>
+                            <th>Status</th>
+                            <th>Total Spent</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var client in Model.Clients)
+                        {
+                            var totalSpent = client.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0;
+                            <tr>
+                                <td>@client.Id</td>
+                                <td>
+                                    <strong>@client.FirstName @client.LastName</strong>
+                                </td>
+                                <td>@client.Email</td>
+                                <td>@(client.PhoneNumber ?? "-")</td>
+                                <td>@(client.Company ?? "-")</td>
+                                <td>
+                                    <span class="badge @(client.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(client.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="fw-bold @(totalSpent > 0 ? "text-success" : "text-muted")">
+                                    @totalSpent.ToString("C")
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-controller="Client" asp-action="Details" asp-route-id="@client.Id"
+                                           class="btn btn-outline-info" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-controller="Client" asp-action="Edit" asp-route-id="@client.Id"
+                                           class="btn btn-outline-primary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-controller="Report" asp-action="ClientPurchaseHistory"
+                                           class="btn btn-outline-success" title="Purchase History">
+                                            <i class="bi bi-receipt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetRankBadgeClass(int rank)
+    {
+        return rank switch
+        {
+            1 => "bg-warning",
+            2 => "bg-secondary",
+            3 => "bg-danger",
+            _ => "bg-info"
+        };
+    }
+    
+    string GetLoyaltyLevel(double totalPurchases)
+    {
+        return totalPurchases switch
+        {
+            >= 5000 => "Platinum",
+            >= 1000 => "Gold",
+            >= 500 => "Silver",
+            >= 100 => "Bronze",
+            _ => "New"
+        };
+    }
+    
+    string GetLoyaltyBadgeClass(string loyaltyLevel)
+    {
+        return loyaltyLevel switch
+        {
+            "Platinum" => "bg-dark",
+            "Gold" => "bg-warning",
+            "Silver" => "bg-secondary",
+            "Bronze" => "bg-danger",
+            _ => "bg-info"
+        };
+    }
+    
+    int GetClientCountByValue(string segment)
+    {
+        return segment switch
+        {
+            "high" => Model.Clients.Count(c => (c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0) > 1000),
+            "medium" => Model.Clients.Count(c => 
+                (c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0) >= 100 && 
+                (c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0) <= 1000),
+            "low" => Model.Clients.Count(c => (c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0) < 100),
+            _ => 0
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#clientsTable').DataTable({
+                pageLength: 25,
+                order: [[6, 'desc']] // Sort by total spent
+            });
+
+            // Search functionality
+            $('#clientSearch').on('keyup', function() {
+                const searchText = $(this).val().toLowerCase();
+                $('#clientsTable tbody tr').each(function() {
+                    const rowText = $(this).text().toLowerCase();
+                    $(this).toggle(rowText.indexOf(searchText) > -1);
+                });
+            });
+        });
+    </script>
+}

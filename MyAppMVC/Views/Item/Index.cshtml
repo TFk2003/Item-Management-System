@@ -1,0 +1,37 @@
+﻿@model List<MyAppMVC.Models.Item>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+	ViewData["Title"] = "Item List";
+}
+
+<h2>@ViewData["Title"]</h2>
+<table class="table">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Name</th>
+			<th>Price</th>
+			<th>Serial Number</th>
+			<th>Category</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td>@item.Id</td>
+				<td>@item.Name</td>
+				<td>$@item.Price.ToString("N2")</td>
+				<td>@item.SerialNumber?.Name</td>
+				<td>@item.Category?.Name</td>
+				<td>
+					<a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary">Edit</a>
+					<a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
+</td>
+			</tr>
+		}
+	</tbody>
+</table>

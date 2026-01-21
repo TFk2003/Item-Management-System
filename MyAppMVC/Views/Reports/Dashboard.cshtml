@@ -1,0 +1,308 @@
+﻿@model MyAppMVC.ViewModels.ReportDashboardViewModel
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Report Dashbaord";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-graph-up"></i> Reports Dashboard</h1>
+            <p class="text-muted">Analytics and insights for your inventory management</p>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <a asp-controller="Reports" asp-action="Export"
+               asp-route-reportType="Dashboard"
+               class="btn btn-outline-success">
+                <i class="bi bi-download"></i> Export
+            </a>
+            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-pdf"></i> Export PDF</a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-excel"></i> Export Excel</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Settings</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Items
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalItems</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box-seam fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Clients
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalClients</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Low Stock Items
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.LowStockItems</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Inventory Value
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">--</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <!-- Recent Transactions -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-clock-history"></i> Recent Transactions
+                    </h6>
+                    <a asp-controller="Report" asp-action="Sales" class="btn btn-sm btn-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Client</th>
+                                    <th>Qty</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var transaction in Model.RecentTransactions)
+                                {
+                                    <tr>
+                                        <td>@transaction.ItemName</td>
+                                        <td>@transaction.ClientName</td>
+                                        <td><span class="badge bg-info">@transaction.Quantity</span></td>
+                                        <td>@transaction.TotalPrice.ToString("C")</td>
+                                        <td><small>@transaction.Date.ToString("MM/dd")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart"></i> Top Categories by Items
+                    </h6>
+                    <a asp-controller="Category" asp-action="Index" class="btn btn-sm btn-primary">
+                        Manage
+                    </a>
+                </div>
+                <div class="card-body">
+                    @foreach (var category in Model.TopCategories)
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>@category.CategoryName</span>
+                                <span class="text-primary">@category.ItemCount items</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-primary" 
+                                     style="width: @((category.ItemCount * 100) / Math.Max(Model.TopCategories.Max(c => c.ItemCount), 1))%">
+                                </div>
+                            </div>
+                            <small class="text-muted">Value: @category.TotalValue.ToString("C")</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card report-card bg-gradient-primary text-white shadow">
+                <div class="card-body">
+                    <div class="text-white-50 small">Sales Report</div>
+                    <div class="mb-2"><i class="bi bi-cash-stack fa-2x"></i></div>
+                    <a asp-action="Sales" class="text-white stretched-link">
+                        <h5>View Sales Analysis</h5>
+                    </a>
+                    <p class="small">Daily, weekly, and monthly sales reports</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card report-card bg-gradient-success text-white shadow">
+                <div class="card-body">
+                    <div class="text-white-50 small">Inventory Report</div>
+                    <div class="mb-2"><i class="bi bi-boxes fa-2x"></i></div>
+                    <a asp-action="Inventory" class="text-white stretched-link">
+                        <h5>Stock Analysis</h5>
+                    </a>
+                    <p class="small">Stock levels, valuation, and turnover</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card report-card bg-gradient-warning text-white shadow">
+                <div class="card-body">
+                    <div class="text-white-50 small">Client Report</div>
+                    <div class="mb-2"><i class="bi bi-people fa-2x"></i></div>
+                    <a asp-action="Clients" class="text-white stretched-link">
+                        <h5>Client Analytics</h5>
+                    </a>
+                    <p class="small">Client behavior and purchase patterns</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card report-card bg-gradient-info text-white shadow">
+                <div class="card-body">
+                    <div class="text-white-50 small">Financial Report</div>
+                    <div class="mb-2"><i class="bi bi-pie-chart fa-2x"></i></div>
+                    <a asp-action="Financial" class="text-white stretched-link">
+                        <h5>Financial Overview</h5>
+                    </a>
+                    <p class="small">Revenue, profit, and financial metrics</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .report-card {
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+
+            .report-card:hover {
+                transform: translateY(-5px);
+            }
+
+        .border-left-primary {
+            border-left: 0.25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: 0.25rem solid #1cc88a !important;
+        }
+
+        .border-left-warning {
+            border-left: 0.25rem solid #f6c23e !important;
+        }
+
+        .border-left-info {
+            border-left: 0.25rem solid #36b9cc !important;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(45deg, #4e73df, #224abe);
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(45deg, #1cc88a, #13855c);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(45deg, #f6c23e, #dda20a);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(45deg, #36b9cc, #258391);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#refreshBtn').click(function() {
+                $(this).find('i').addClass('fa-spin');
+                setTimeout(() => {
+                    $(this).find('i').removeClass('fa-spin');
+                }, 1000);
+            });
+
+            // Simulate loading data
+            setTimeout(() => {
+                toastr.success('Dashboard data refreshed');
+            }, 1500);
+        });
+
+        function exportToPDF() {
+            window.location.href = '@Url.Action("Export", "Reports")' +
+                '?reportType=Dashboard&format=pdf';
+        }
+
+        function exportToExcel() {
+            window.location.href = '@Url.Action("Export", "Reports")' +
+                '?reportType=Dashboard&format=excel';
+        }
+
+        function exportSalesReport() {
+            window.location.href = '@Url.Action("Export", "Reports")' +
+                '?reportType=Sales&format=excel';
+        }
+
+    </script>
+}

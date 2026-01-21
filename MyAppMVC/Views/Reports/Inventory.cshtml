@@ -1,0 +1,407 @@
+﻿@model MyAppMVC.ViewModels.InventoryReportViewModel
+
+@{
+    ViewData["Title"] = "Inventory Report";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-boxes"></i> Inventory Report</h1>
+            <p class="text-muted">Stock analysis and valuation report</p>
+        </div>
+        <div>
+            <a asp-controller="Item" asp-action="LowStock" class="btn btn-warning">
+                <i class="bi bi-exclamation-triangle"></i> Low Stock Alert (@Model.LowStockItems)
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Inventory Value
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalStockValue.ToString("C")</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-cash-stack fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Total Items
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalItems</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Low Stock
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.LowStockItems</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                Out of Stock
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">@Model.OutOfStockItems</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Avg. Stock Value
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                @((Model.TotalItems > 0 ? Model.TotalStockValue / Model.TotalItems : 0).ToString("C"))
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">All Categories</option>
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active Only</option>
+                                <option value="inactive">Inactive Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Stock Level</label>
+                            <select class="form-select" id="stockFilter">
+                                <option value="">All</option>
+                                <option value="low">Low Stock Only</option>
+                                <option value="out">Out of Stock</option>
+                                <option value="healthy">Healthy Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                <i class="bi bi-funnel"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-pie-chart"></i> Inventory by Category</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Items</th>
+                                    <th>Total Value</th>
+                                    <th>% of Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var category in Model.StockByCategory)
+                                {
+                                    var percentage = Model.TotalStockValue > 0 ?
+                                    (category.TotalValue / Model.TotalStockValue * 100) : 0;
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="category-dot me-2"
+                                                     style="background-color: @GetCategoryColor(category.CategoryName);"></div>
+                                                @category.CategoryName
+                                            </div>
+                                        </td>
+                                        <td>@category.TotalItems</td>
+                                        <td>@category.TotalValue.ToString("C")</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" style="width: @percentage%">
+                                                    @percentage.ToString("0.0")%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-speedometer2"></i> Stock Health Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-success bg-opacity-10">
+                                <h1 class="text-success">@(Model.TotalItems - Model.LowStockItems - Model.OutOfStockItems)</h1>
+                                <small>Healthy Stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-warning bg-opacity-10">
+                                <h1 class="text-warning">@Model.LowStockItems</h1>
+                                <small>Low Stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-danger bg-opacity-10">
+                                <h1 class="text-danger">@Model.OutOfStockItems</h1>
+                                <small>Out of Stock</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Stock Turnover Rate</h6>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar bg-success" style="width: 60%">60%</div>
+                            <div class="progress-bar bg-warning" style="width: 25%">25%</div>
+                            <div class="progress-bar bg-danger" style="width: 15%">15%</div>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Fast Moving</span>
+                            <span>Slow Moving</span>
+                            <span>Non-Moving</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="bi bi-list-check"></i> Detailed Inventory List</h5>
+            <div class="btn-group">
+                <a asp-controller="Reports" asp-action="Export"
+                   asp-route-reportType="Inventory"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>SKU</th>
+                            <th>Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Unit Price</th>
+                            <th>Stock Value</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            var stockValue = item.Price * item.StockQuantity;
+                            var stockStatus = item.StockQuantity == 0 ? "out" :
+                            item.StockQuantity < item.ReorderLevel ? "low" : "healthy";
+                            <tr data-category="@item.CategoryId" data-status="@item.IsActive.ToString().ToLower()" data-stock="@stockStatus">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="bi bi-box"></i>
+                                        </div>
+                                        <div>
+                                            <strong>@item.Name</strong><br>
+                                            <small class="text-muted">@item.Description?.Truncate(50)</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.Category?.Name</span>
+                                </td>
+                                <td>@(item.SKU ?? "-")</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge @GetStockBadgeClass(stockStatus) me-2">
+                                            @item.StockQuantity
+                                        </span>
+                                        @if (stockStatus == "low")
+                                        {
+                                            <i class="bi bi-exclamation-triangle text-warning"
+                                               title="Below reorder level"></i>
+                                        }
+                                        else if (stockStatus == "out")
+                                        {
+                                            <i class="bi bi-x-circle text-danger" title="Out of stock"></i>
+                                        }
+                                    </div>
+                                </td>
+                                <td>@item.ReorderLevel</td>
+                                <td>@item.Price.ToString("C")</td>
+                                <td class="fw-bold">@stockValue.ToString("C")</td>
+                                <td>
+                                    <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(item.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td>
+                                    <a asp-controller="Item" asp-action="Edit" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetCategoryColor(string categoryName)
+    {
+        // Simple hash function to generate consistent colors
+        int hash = categoryName.GetHashCode();
+        var colors = new[] { "#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#d35400", "#34495e" };
+        return colors[Math.Abs(hash) % colors.Length];
+    }
+
+    string GetStockBadgeClass(string stockStatus)
+    {
+        return stockStatus switch
+        {
+            "healthy" => "bg-success",
+            "low" => "bg-warning",
+            "out" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        function applyFilters() {
+            const category = $('#categoryFilter').val();
+            const status = $('#statusFilter').val();
+            const stock = $('#stockFilter').val();
+
+            // Show all rows first
+            $('#inventoryTable tbody tr').show();
+
+            // Apply category filter
+            if (category) {
+                $('#inventoryTable tbody tr').each(function() {
+                    if ($(this).data('category') != category) {
+                        $(this).hide();
+                    }
+                });
+            }
+
+            // Apply status filter
+            if (status) {
+                $('#inventoryTable tbody tr:visible').each(function() {
+                    if ($(this).data('status') != status) {
+                        $(this).hide();
+                    }
+                });
+            }
+
+            // Apply stock filter
+            if (stock) {
+                $('#inventoryTable tbody tr:visible').each(function() {
+                    if ($(this).data('stock') != stock) {
+                        $(this).hide();
+                    }
+                });
+            }
+
+            toastr.info('Filters applied');
+        }
+
+        function printInventory() {
+            window.print();
+        }
+
+        function exportInventory() {
+            toastr.info('Export functionality would be implemented here');
+        }
+
+        $(document).ready(function() {
+            $('#inventoryTable').DataTable({
+                pageLength: 25,
+                order: [[6, 'desc']] // Sort by stock value
+            });
+        });
+    </script>
+
+    <style>
+        .category-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+}

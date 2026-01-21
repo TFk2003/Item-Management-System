@@ -1,0 +1,218 @@
+﻿@{
+    ViewData["Title"] = "Export Reports";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-download"></i> Export Reports</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["ExportMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> @TempData["ExportMessage"]
+                        </div>
+                    }
+                    
+                    <form asp-action="ExportReport" method="post" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-file-earmark-text"></i> Select Report Type
+                            </label>
+                            <select class="form-select" name="ReportType" id="reportType" required>
+                                <option value="">-- Select Report --</option>
+                                <option value="Sales" selected="@(ViewBag.ReportType == "Sales")">Sales Report</option>
+                                <option value="Inventory" selected="@(ViewBag.ReportType == "Inventory")">Inventory Report</option>
+                                <option value="Clients" selected="@(ViewBag.ReportType == "Clients")">Client Report</option>
+                                <option value="Financial" selected="@(ViewBag.ReportType == "Financial")">Financial Report</option>
+                                <option value="Dashboard" selected="@(ViewBag.ReportType == "Dashboard")">Dashboard Summary</option>
+                                <option value="All" selected="@(ViewBag.ReportType == "All")">All Reports (ZIP)</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" name="StartDate" id="startDate" class="form-control"
+                                       value="@(ViewBag.StartDate ?? DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd"))" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                <input type="date" name="EndDate" id="endDate" class="form-control"
+                                       value="@(ViewBag.EndDate ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-filetype-pdf"></i> Export Format
+                            </label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Format"
+                                               value="pdf" id="formatPdf" checked>
+                                        <label class="form-check-label" for="formatPdf">
+                                            <i class="bi bi-file-earmark-pdf text-danger"></i> PDF
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Format"
+                                               value="excel" id="formatExcel">
+                                        <label class="form-check-label" for="formatExcel">
+                                            <i class="bi bi-file-earmark-excel text-success"></i> Excel
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Format"
+                                               value="csv" id="formatCsv">
+                                        <label class="form-check-label" for="formatCsv">
+                                            <i class="bi bi-filetype-csv text-primary"></i> CSV
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Format"
+                                               value="word" id="formatWord">
+                                        <label class="form-check-label" for="formatWord">
+                                            <i class="bi bi-file-earmark-word text-info"></i> Word
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="IncludeCharts"
+                                       value="true" id="includeCharts" checked>
+                                <label class="form-check-label" for="includeCharts">
+                                    <i class="bi bi-bar-chart"></i> Include charts and graphs
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-gear"></i> Additional Options
+                            </label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="includeSummary">
+                                        <label class="form-check-label" for="includeSummary">
+                                            Include Summary
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="passwordProtect">
+                                        <label class="form-check-label" for="passwordProtect">
+                                            Password Protect
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="emailReport">
+                                        <label class="form-check-label" for="emailReport">
+                                            Email Report
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-download"></i> Generate & Download Report
+                            </button>
+                        </div>
+                        <input type="hidden" name="Year" value="@ViewBag.Year" />
+                    </form>
+                    <div class="mt-5">
+                        <h5><i class="bi bi-clock-history"></i> Recent Exports</h5>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Sales Report - January 2024</h6>
+                                    <small>2 days ago</small>
+                                </div>
+                                <p class="mb-1">PDF Format | 15 pages</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-download"></i> Downloaded by: Admin
+                                </small>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Inventory Report - Q4 2023</h6>
+                                    <small>1 week ago</small>
+                                </div>
+                                <p class="mb-1">Excel Format | 8 sheets</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-download"></i> Downloaded by: Manager
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const reportType = urlParams.get('reportType');
+            const startDate = urlParams.get('startDate');
+            const endDate = urlParams.get('endDate');
+            const year = urlParams.get('year');
+
+            if (reportType) {
+                $('#reportType').val(reportType);
+            }
+            if (startDate) {
+                $('#startDate').val(startDate);
+            }
+            if (endDate) {
+                $('#endDate').val(endDate);
+            }
+            if (year) {
+                $('input[name="Year"]').val(year);
+            }
+
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Show loading on export
+            $('form').submit(function() {
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...');
+            });
+        });
+    </script>
+}

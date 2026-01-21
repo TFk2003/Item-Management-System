@@ -1,0 +1,143 @@
+﻿@model MyAppMVC.Models.Category
+
+@{
+    ViewData["Title"] = "Create Category";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-plus-circle"></i>Create New Category</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">
+                                        <i class="bi bi-tag"></i> Category Name *
+                                    </label>
+                                    <input asp-for="Name" class="form-control" placeholder="Enter category name" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                    <div class="form-text">This will be used to group your items</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-palette"></i> Color
+                                    </label>
+                                    <input type="color" class="form-control form-control-color"
+                                           value="#3498db" title="Choose category color">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Description
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Optional description for this category"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-activity"></i> Status
+                                    </label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
+                                        <label class="form-check-label" asp-for="IsActive">
+                                            Active Category
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Inactive categories won't appear in dropdowns</div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Category
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-eye"></i> Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6>Category Card Preview</h6>
+                                <div class="d-flex align-items-center mt-2">
+                                    <div class="category-preview-color me-2" style="background-color: #3498db; width: 20px; height: 20px; border-radius: 50%;"></div>
+                                    <div>
+                                        <strong id="previewName">New Category</strong><br>
+                                        <small class="text-muted" id="previewDesc">Description will appear here</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6>Status</h6>
+                                <span class="badge bg-success" id="previewStatus">Active</span>
+                                <p class="mt-2 mb-0"><small>Items in this category: <strong>0</strong></small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        $(document).ready(function() {
+            // Live preview
+            $('#Name').on('input', function() {
+                $('#previewName').text($(this).val() || 'New Category');
+            });
+
+            $('#Description').on('input', function() {
+                $('#previewDesc').text($(this).val() || 'Description will appear here');
+            });
+
+            $('.form-check-input').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#previewStatus').removeClass('bg-secondary').addClass('bg-success').text('Active');
+                } else {
+                    $('#previewStatus').removeClass('bg-success').addClass('bg-secondary').text('Inactive');
+                }
+            });
+
+            $('.form-control-color').change(function() {
+                $('.category-preview-color').css('background-color', $(this).val());
+            });
+
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+        });
+    </script>
+}
