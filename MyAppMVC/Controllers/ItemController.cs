@@ -21,6 +21,7 @@ namespace MyAppMVC.Controllers
             var items = await databaseContext.Items
                 .Include(s => s.SerialNumber)
                 .Include(c => c.Category)
+                .Include(s => s.Supplier)
                 .ToListAsync();
             return View(items);
         }
@@ -28,11 +29,12 @@ namespace MyAppMVC.Controllers
         public IActionResult Create()
         {
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
+            ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("Id, Name, Price, CategoryId")] Item item)
+        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId")] Item item)
         {
             if (ModelState.IsValid)
             {
@@ -40,18 +42,34 @@ namespace MyAppMVC.Controllers
                 await databaseContext.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
+            ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
+            ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
+
             return View(item);
         }
 
         public async Task<IActionResult> Edit(int id)
         {
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
-            var items = await databaseContext.Items.FirstOrDefaultAsync(x => x.Id == id);
-            return View(items);
+            ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
+
+            var item = await databaseContext.Items
+                .Include(s => s.SerialNumber)
+                .Include(c => c.Category)
+                .Include(s => s.Supplier)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            return View(item);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(int id, [Bind("Id, Name, Price, CategoryId")] Item item)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId,IsActive")] Item item)
         {
             if (id != item.Id)
             {
@@ -59,16 +77,51 @@ namespace MyAppMVC.Controllers
             }
             if (ModelState.IsValid)
             {
-                databaseContext.Update(item);
-                await databaseContext.SaveChangesAsync();
+                try
+                {
+                    // Preserve CreatedDate and add LastUpdated
+                    var existingItem = await databaseContext.Items.FindAsync(id);
+                    if (existingItem != null)
+                    {
+                        item.CreatedDate = existingItem.CreatedDate;
+                    }
+                    item.LastUpdated = DateTime.UtcNow;
+
+                    databaseContext.Update(item);
+                    await databaseContext.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!ItemExists(item.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
                 return RedirectToAction("Index");
             }
+            ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
+            ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
+
             return View(item);
         }
 
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await databaseContext.Items.FirstOrDefaultAsync(x => x.Id == id);
+            var item = await databaseContext.Items
+                .Include(s => s.SerialNumber)
+                .Include(c => c.Category)
+                .Include(s => s.Supplier)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (item == null)
+            {
+                return NotFound();
+            }
+
             return View(item);
         }
 
@@ -84,9 +137,23 @@ namespace MyAppMVC.Controllers
             await databaseContext.SaveChangesAsync();
             return RedirectToAction("Index");
         }
-        public IActionResult Overview()
+        public async Task<IActionResult> Details(int? id)
         {
-            var item = new Item() { Name = "Keyboard" };
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var item = await databaseContext.Items
+                .Include(s => s.SerialNumber)
+                .Include(c => c.Category)
+                .Include(s => s.Supplier)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
             return View(item);
         }
 
@@ -174,5 +241,11 @@ namespace MyAppMVC.Controllers
             TempData["SuccessMessage"] = $"{quantity} units of item {item.Name} have been added to stock";
             return RedirectToAction(nameof(LowStock));
         }
+
+        private bool ItemExists(int id)
+        {
+            return databaseContext.Items.Any(e => e.Id == id);
+        }
+
     }
 }

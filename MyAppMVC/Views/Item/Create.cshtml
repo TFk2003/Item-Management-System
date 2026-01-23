@@ -5,33 +5,213 @@
 @{
 	ViewData["Title"] = "Create Item";
 }
+<div class="container-fluid">
+	<div class="row">
+		<div class="col mx-auto">
+			<div class="card">
+				<div class="card-header bg-primary text-white">
+					<h4><i class="bi bi-plus-circle"></i>Create New Item</h4>
+				</div>
+				<div class="card-body">
+                    <form asp-action="Create" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">
+                                        <i class="bi bi-tag"></i> Item Name *
+                                    </label>
+                                    <input asp-for="Name" class="form-control" placeholder="Enter item name" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                    <div class="form-text">This will be used to group your items</div>
+                                </div>
+                            </div>
+							<div class="col-md-4">
+								<div class="mb-3">
+									<label asp-for="SKU" class="form-label">
+										<i class="bi bi-upc-scan"></i> SKU
+									</label>
+									<input asp-for="SKU" class="form-control" placeholder="e.g., ITM-001" />
+									<span asp-validation-for="SKU" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Description
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Optional description for this item"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+						<div class="row">
+							<div class="col-md-4">
+								<div class="mb-3">
+									<label asp-for="Price" class="form-label">
+										<i class="bi bi-currency-dollar"></i> Price *
+									</label>
+									<input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" required />
+									<span asp-validation-for="Price" class="text-danger"></span>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="mb-3">
+									<label asp-for="StockQuantity" class="form-label">
+										<i class="bi bi-box"></i> Initial Stock *
+									</label>
+									<input asp-for="StockQuantity" class="form-control" type="number" min="0" value="0" required />
+									<span asp-validation-for="StockQuantity" class="text-danger"></span>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="mb-3">
+									<label asp-for="ReorderLevel" class="form-label">
+										<i class="bi bi-exclamation-triangle"></i> Reorder Level
+									</label>
+									<input asp-for="ReorderLevel" class="form-control" type="number" min="1" value="10" />
+									<span asp-validation-for="ReorderLevel" class="text-danger"></span>
+									<div class="form-text">Alert when stock falls below this level</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label asp-for="Manufacturer" class="form-label">
+										<i class="bi bi-building"></i> Manufacturer
+									</label>
+									<input asp-for="Manufacturer" class="form-control" placeholder="Manufacturer name" />
+									<span asp-validation-for="Manufacturer" class="text-danger"></span>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label asp-for="CategoryId" class="form-label">
+										<i class="bi bi-tags"></i> Category *
+									</label>
+									<select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-select" required>
+										<option value="">-- Select Category --</option>
+									</select>
+									<span asp-validation-for="CategoryId" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label asp-for="SupplierId" class="form-label">
+										<i class="bi bi-truck"></i> Supplier
+									</label>
+									<select asp-for="SupplierId" asp-items="ViewBag.Suppliers" class="form-select">
+										<option value="">-- Select Supplier (Optional) --</option>
+									</select>
+									<span asp-validation-for="SupplierId" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Item
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+			<div class="card mt-4">
+				<div class="card-header">
+					<h5><i class="bi bi-eye"></i> Preview</h5>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="border rounded p-3">
+								<h6>Item Preview</h6>
+								<div class="d-flex align-items-center mt-2">
+									<div class="me-2">
+										<i class="bi bi-box text-primary fs-4"></i>
+									</div>
+									<div>
+										<strong id="previewName">New Item</strong><br>
+										<small class="text-muted" id="previewDesc">Description will appear here</small>
+									</div>
+								</div>
+								<div class="mt-2">
+									<small>Price: <span id="previewPrice" class="text-success">$0.00</span></small> |
+									<small>Stock: <span id="previewStock" class="text-info">0</span></small>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="border rounded p-3">
+								<h6>Status</h6>
+								<span class="badge bg-success" id="previewStatus">Active</span>
+								<div class="mt-2">
+									<small>Reorder Level: <span id="previewReorder" class="text-warning">10</span></small><br>
+									<small>SKU: <span id="previewSKU" class="text-muted">-</span></small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
-<h2>@ViewData["Title"]</h2>
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
 
-<form asp-action="Create" method="post">
-	<div class="form-group">
-		<label asp-for="Name" class="control-label"></label>
-		<input asp-for="Name" class="form-control" />
-		<span asp-validation-for="Name" class="text-danger"></span>
-	</div>
-	<div class="form-group">
-		<label asp-for="Price" class="control-label"></label>
-		<input asp-for="Price" class="form-control" />
-		<span asp-validation-for="Price" class="text-danger"></span>
-	</div>
-	@* <div class="form-group">
-		<label asp-for="SerailId" class="control-label"></label>
-		<input asp-for="SerailId" class="form-control" />
-		<span asp-validation-for="SerailId" class="text-danger"></span>
-	</div> *@
-	<div class="form-group">
-		<label asp-for="CategoryId" class="control-label">Category</label>
-		<select asp-for="CategoryId" asp-items="ViewBag.Categories" class="form-control">
-			<option value="">-- Select Category --</option>
-		</select>
-		@* <span asp-validation-for="CategoryId" class="text-danger"></span> *@
-	</div>
-	<div class="form-group">
-		<input type="submit" value="Create" class="btn btn-primary" />
-	</div>
-</form>
+	<script>
+		$(document).ready(function() {
+			// Live preview updates
+			$('#Name').on('input', function() {
+				$('#previewName').text($(this).val() || 'New Item');
+			});
+
+			$('#Description').on('input', function() {
+				$('#previewDesc').text($(this).val() || 'Description will appear here');
+			});
+
+			$('#Price').on('input', function() {
+				const price = parseFloat($(this).val()) || 0;
+				$('#previewPrice').text('$' + price.toFixed(2));
+			});
+
+			$('#StockQuantity').on('input', function() {
+				$('#previewStock').text($(this).val() || '0');
+			});
+
+			$('#ReorderLevel').on('input', function() {
+				$('#previewReorder').text($(this).val() || '10');
+			});
+
+			$('#SKU').on('input', function() {
+				$('#previewSKU').text($(this).val() || '-');
+			});
+
+			$('#IsActive').change(function() {
+				if ($(this).is(':checked')) {
+					$('#previewStatus').removeClass('bg-secondary').addClass('bg-success').text('Active');
+				} else {
+					$('#previewStatus').removeClass('bg-success').addClass('bg-secondary').text('Inactive');
+				}
+			});
+
+			// Form validation
+			$('.needs-validation').on('submit', function(event) {
+				if (!this.checkValidity()) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+				$(this).addClass('was-validated');
+			});
+		});
+	</script>
+}

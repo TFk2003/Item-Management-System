@@ -24,6 +24,7 @@ namespace MyAppMVC.Models
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? LastUpdated { get; set; }
         public int? SerailId { get; set; }
+        [ForeignKey("SerailId")]
         public SerialNumber? SerialNumber { get; set; }
         public int? CategoryId { get; set; }
         [ForeignKey("CategoryId")]
