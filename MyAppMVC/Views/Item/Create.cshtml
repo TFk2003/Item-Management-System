@@ -110,6 +110,72 @@
 								</div>
 							</div>
 						</div>
+						<div class="card mb-4">
+							<div class="card-header">
+								<h6><i class="bi bi-upc"></i> Serial Number Information</h6>
+								<small class="text-muted">Optional - For tracked items only</small>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label class="form-label">
+												<i class="bi bi-qr-code"></i> Serial Code *
+											</label>
+											<input name="serialCode" class="form-control"
+												   placeholder="Enter unique serial code" />
+											<div class="form-text">Required if adding serial number</div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label class="form-label">
+												<i class="bi bi-tag"></i> Serial Name
+											</label>
+											<input name="serialName" class="form-control"
+												   placeholder="Serial number display name" />
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="mb-3">
+											<label class="form-label">
+												<i class="bi bi-shield-check"></i> Warranty Information
+											</label>
+											<input name="warrantyInfo" class="form-control"
+												   placeholder="e.g., 1 Year Limited Warranty" />
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label class="form-label">
+												<i class="bi bi-calendar"></i> Manufacture Date
+											</label>
+											<input name="manufactureDate" class="form-control" type="date" />
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label class="form-label">
+												<i class="bi bi-calendar-x"></i> Expiry Date
+											</label>
+											<input name="expiryDate" class="form-control" type="date" />
+											<div class="form-text">Leave blank if no expiry</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="form-check mt-2">
+									<input class="form-check-input" type="checkbox" id="hasSerialNumber" checked>
+									<label class="form-check-label" for="hasSerialNumber">
+										This item has a serial number
+									</label>
+								</div>
+							</div>
+						</div>
                         <hr />
                         <div class="d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-outline-secondary">
@@ -212,6 +278,23 @@
 				}
 				$(this).addClass('was-validated');
 			});
+
+			$('#hasSerialNumber').change(function() {
+				const isChecked = $(this).is(':checked');
+				$('input[name="serialCode"]').prop('required', isChecked);
+				$('input[name="serialName"]').prop('required', isChecked);
+
+				// Show/hide validation messages
+				if (!isChecked) {
+					$('input[name="serialCode"], input[name="serialName"]').removeClass('is-invalid');
+				}
+			});
+
+			// Initialize based on current value
+			const hasSerialCode = $('input[name="serialCode"]').val().trim() !== '';
+			$('#hasSerialNumber').prop('checked', hasSerialCode);
+			$('input[name="serialCode"]').prop('required', hasSerialCode);
+			$('input[name="serialName"]').prop('required', hasSerialCode);
 		});
 	</script>
 }

@@ -1,52 +1,323 @@
 ﻿@model MyAppMVC.Models.PurchaseOrder
-
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Create Purchase Order";
 }
 
-<h1>Create</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-plus-circle"></i> Create Purchase Order</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-<h4>PurchaseOrder</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="OrderNumber" class="control-label"></label>
-                <input asp-for="OrderNumber" class="form-control" />
-                <span asp-validation-for="OrderNumber" class="text-danger"></span>
+                        <!-- Order Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="OrderNumber" class="form-label">
+                                        <i class="bi bi-hash"></i> Order Number *
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">PO-</span>
+                                        <input asp-for="OrderNumber" class="form-control" readonly
+                                               placeholder="001" value="@($"PO-{DateTime.Now:yyyyMMdd}-{new Random().Next(100, 999)}")" required />
+                                    </div>
+                                    <span asp-validation-for="OrderNumber" class="text-danger"></span>
+                                    <div class="form-text">Auto-generated order number</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-calendar"></i> Order Date
+                                    </label>
+                                    <input type="date" class="form-control"
+                                           value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly />
+                                    <div class="form-text">Today's date</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Supplier Selection -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="SupplierId" class="form-label">
+                                        <i class="bi bi-truck"></i> Select Supplier *
+                                    </label>
+                                    <select asp-for="SupplierId" class="form-select" id="supplierSelect" required>
+                                        <option value="">-- Select Supplier --</option>
+                                        @if (ViewData["SupplierId"] is SelectList suppliers)
+                                        {
+                                            @foreach (var item in suppliers)
+                                            {
+                                                <option value="@item.Value">@item.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="SupplierId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ExpectedDeliveryDate" class="form-label">
+                                        <i class="bi bi-calendar-check"></i> Expected Delivery Date
+                                    </label>
+                                    <input asp-for="ExpectedDeliveryDate" class="form-control" type="date"
+                                           min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                    <span asp-validation-for="ExpectedDeliveryDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Selection -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="bi bi-cart-plus"></i> Add Items to Order</h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItemRow()">
+                                    <i class="bi bi-plus"></i> Add Item
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table" id="itemsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Quantity</th>
+                                                <th>Unit Price</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            <!-- Rows will be added dynamically -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-secondary">
+                                                <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                                <td id="subtotalAmount">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="table-secondary">
+                                                <td colspan="3" class="text-end"><strong>Tax (10%):</strong></td>
+                                                <td id="taxAmount">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="table-dark">
+                                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                                <td id="grandTotal">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <!-- Hidden fields for items -->
+                                <div id="itemsData"></div>
+
+                                <!-- Items Selector -->
+                                <div class="row mt-3">
+                                    <div class="col-md-8">
+                                        <select class="form-select" id="itemSelector">
+                                            <option value="">-- Select Item to Add --</option>
+                                            <!-- Will be populated via JavaScript -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control" id="itemQuantity" placeholder="Qty" min="1" value="1">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary w-100" onclick="addSelectedItem()">
+                                            Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Amount -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="TotalAmount" class="form-label">
+                                        <i class="bi bi-cash-stack"></i> Total Amount
+                                    </label>
+                                    <input asp-for="TotalAmount" type="number" step="0.01" class="form-control" readonly
+                                           id="totalAmountInput" value="0" />
+                                    <span asp-validation-for="TotalAmount" class="text-danger"></span>
+                                    <div class="form-text">Calculated automatically from items</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-chat-text"></i> Notes
+                                    </label>
+                                    <textarea class="form-control" rows="2" placeholder="Any special instructions or notes..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Orders
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Purchase Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="SupplierId" class="control-label"></label>
-                <select asp-for="SupplierId" class ="form-control" asp-items="ViewBag.SupplierId"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="ExpectedDeliveryDate" class="control-label"></label>
-                <input asp-for="ExpectedDeliveryDate" class="form-control" />
-                <span asp-validation-for="ExpectedDeliveryDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ActualDeliveryDate" class="control-label"></label>
-                <input asp-for="ActualDeliveryDate" class="form-control" />
-                <span asp-validation-for="ActualDeliveryDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="TotalAmount" class="control-label"></label>
-                <input asp-for="TotalAmount" class="form-control" />
-                <span asp-validation-for="TotalAmount" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        let itemCounter = 0;
+        let items = []; // This would be populated from server in real app
+
+        $(document).ready(function() {
+            // Sample items data (in real app, fetch from server)
+            items = @Html.Raw(Json.Serialize(ViewData["Items"]));
+
+            // Populate item selector
+            const itemSelector = $('#itemSelector');
+            items.forEach(item => {
+                itemSelector.append(new Option(`${item.name} (${item.sku}) - $${item.price}`, item.id));
+            });
+
+            // Add initial item row
+            addItemRow();
+        });
+
+        function addItemRow(itemId = null, quantity = 1, unitPrice = 0) {
+            const item = itemId ? items.find(i => i.id == itemId) : null;
+            const rowId = `itemRow_${itemCounter++}`;
+
+            const row = `
+                <tr id="${rowId}">
+                    <td>
+                        <select class="form-select item-select" onchange="updateItemPrice(this, ${rowId})">
+                            <option value="">-- Select Item --</option>
+                            ${items.map(i => `<option value="${i.id}" ${itemId == i.id ? 'selected' : ''}>${i.name} (${i.sku})</option>`).join('')}
+                        </select>
+                        <input type="hidden" name="Items[${rowId}].ItemId" class="item-id" value="${itemId || ''}" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control quantity-input" min="1" value="${quantity}"
+                               onchange="calculateRowTotal('${rowId}'); calculateTotals()">
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control price-input" step="0.01" value="${item.price}"
+                                   onchange="calculateRowTotal('${rowId}'); calculateTotals()">
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-bold row-total">$${(quantity * (item ? item.price : unitPrice)).toFixed(2)}</span>
+                        <input type="hidden" class="row-total-input" value="${quantity * (item ? item.price : unitPrice)}" />
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItemRow('${rowId}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            $('#itemsTableBody').append(row);
+            calculateTotals();
+        }
+
+        function addSelectedItem() {
+            const itemId = $('#itemSelector').val();
+            const quantity = $('#itemQuantity').val() || 1;
+
+            if (!itemId) {
+                alert('Please select an item');
+                return;
+            }
+
+            const item = items.find(i => i.id == itemId);
+            if (item) {
+                addItemRow(itemId, quantity, item.price);
+                $('#itemSelector').val('');
+                $('#itemQuantity').val(1);
+            }
+        }
+
+        function updateItemPrice(select, rowId) {
+            const itemId = $(select).val();
+            const item = items.find(i => i.id == itemId);
+            const row = $(`#${rowId}`);
+
+            if (item) {
+                row.find('.item-id').val(itemId);
+                row.find('.price-input').val(item.price);
+                calculateRowTotal(rowId);
+                calculateTotals();
+            }
+        }
+
+        function calculateRowTotal(rowId) {
+            const row = $(`#${rowId}`);
+            const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
+            const price = parseFloat(row.find('.price-input').val()) || 0;
+            const total = quantity * price;
+
+            row.find('.row-total').text('$' + total.toFixed(2));
+            row.find('.row-total-input').val(total);
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+
+            $('.row-total-input').each(function() {
+                subtotal += parseFloat($(this).val()) || 0;
+            });
+
+            const tax = subtotal * 0.10; // 10% tax
+            const grandTotal = subtotal + tax;
+
+            $('#subtotalAmount').text('$' + subtotal.toFixed(2));
+            $('#taxAmount').text('$' + tax.toFixed(2));
+            $('#grandTotal').text('$' + grandTotal.toFixed(2));
+            $('#totalAmountInput').val(grandTotal.toFixed(2));
+        }
+
+        function removeItemRow(rowId) {
+            $(`#${rowId}`).remove();
+            calculateTotals();
+        }
+
+        // Form validation
+        $('.needs-validation').on('submit', function(event) {
+            if (!this.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+
+            // Ensure at least one item is added
+            const itemCount = $('#itemsTableBody tr').length;
+            if (itemCount === 0) {
+                event.preventDefault();
+                toastr.error('Please add at least one item to the order');
+            }
+        });
+    </script>
 }

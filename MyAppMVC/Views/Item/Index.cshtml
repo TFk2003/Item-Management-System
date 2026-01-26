@@ -118,9 +118,9 @@
                                     <td>@item.ReorderLevel</td>
 									<td>@item.SKU</td>
                                     <td>@item.Manufacturer</td>
-									<td>@item.Supplier</td>
+									<td>@item.Supplier?.CompanyName</td>
                                     <td>@item.Category?.Name</td>
-									<td>@item.SerialNumber?.Name</td>
+									<td>@item.SerialNumber?.SerialCode</td>
                                     <td>
                                         <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
                                             @(item.IsActive ? "Active" : "Inactive")

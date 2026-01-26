@@ -48,6 +48,7 @@ namespace MyAppMVC.Controllers
         // GET: PurchaseOrders/Create
         public IActionResult Create()
         {
+            ViewData["Items"] = _context.Items.ToList();
             ViewData["SupplierId"] = new SelectList(_context.Suppliers, "Id", "CompanyName");
             return View();
         }

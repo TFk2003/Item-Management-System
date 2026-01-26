@@ -34,19 +34,52 @@ namespace MyAppMVC.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId")] Item item)
+        public async Task<IActionResult> Create(
+            [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId")] Item item
+            , string serialCode, string serialName,
+            string warrantyInfo, DateTime? manufactureDate, DateTime? expiryDate)
         {
             if (ModelState.IsValid)
             {
-                databaseContext.Add(item);
-                await databaseContext.SaveChangesAsync();
-                return RedirectToAction("Index");
+                try 
+                { 
+                    // Ensure SerialNumber is associated with the Item
+                    if (!string.IsNullOrEmpty(serialCode))
+                    {
+                        var serialNumber = new SerialNumber
+                        {
+                            SerialCode = serialCode,
+                            Name = serialName,
+                            WarrantyInfo = warrantyInfo,
+                            ManufactureDate = manufactureDate,
+                            ExpiryDate = expiryDate
+                        };
+
+                        // Add serial number to context first
+                        databaseContext.SerialNumbers.Add(serialNumber);
+                        await databaseContext.SaveChangesAsync(); // Save to get ID
+
+                        // Assign the serial number to the item
+                        item.SerailId = serialNumber.Id;
+                    }
+
+                    databaseContext.Add(item);
+                    await databaseContext.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = $"Item '{item.Name}' created successfully!";
+                    return RedirectToAction("Index");
+
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"Error creating item: {ex.Message}");
+                }
             }
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
             ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
 
             return View(item);
-        }
+}
 
         public async Task<IActionResult> Edit(int id)
         {
@@ -69,7 +102,8 @@ namespace MyAppMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId,IsActive")] Item item)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId,IsActive")] Item item,
+            [Bind("Id,SerialCode,Name,ManufactureDate,ExpiryDate,WarrantyInfo")] SerialNumber serialNumber)
         {
             if (id != item.Id)
             {
@@ -86,6 +120,9 @@ namespace MyAppMVC.Controllers
                         item.CreatedDate = existingItem.CreatedDate;
                     }
                     item.LastUpdated = DateTime.UtcNow;
+                    // Update SerialNumber
+                    serialNumber.ItemId = item.Id;
+                    databaseContext.Update(serialNumber);
 
                     databaseContext.Update(item);
                     await databaseContext.SaveChangesAsync();
