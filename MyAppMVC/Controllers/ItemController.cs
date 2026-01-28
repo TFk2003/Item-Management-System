@@ -103,7 +103,7 @@ namespace MyAppMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId,IsActive")] Item item,
-            [Bind("Id,SerialCode,Name,ManufactureDate,ExpiryDate,WarrantyInfo")] SerialNumber serialNumber)
+            string serialCode, string serialName, string warrantyInfo, DateTime? manufactureDate, DateTime? expiryDate)
         {
             if (id != item.Id)
             {
@@ -114,18 +114,70 @@ namespace MyAppMVC.Controllers
                 try
                 {
                     // Preserve CreatedDate and add LastUpdated
-                    var existingItem = await databaseContext.Items.FindAsync(id);
-                    if (existingItem != null)
-                    {
-                        item.CreatedDate = existingItem.CreatedDate;
-                    }
-                    item.LastUpdated = DateTime.UtcNow;
-                    // Update SerialNumber
-                    serialNumber.ItemId = item.Id;
-                    databaseContext.Update(serialNumber);
+                    var existingItem = await databaseContext.Items
+                        .Include(i => i.SerialNumber)
+                        .FirstOrDefaultAsync(i => i.Id == id);
 
-                    databaseContext.Update(item);
+                    if (existingItem == null)
+                    {
+                        return NotFound();
+                    }
+
+                    existingItem.Name = item.Name;
+                    existingItem.Description = item.Description;
+                    existingItem.Price = item.Price;
+                    existingItem.StockQuantity = item.StockQuantity;
+                    existingItem.ReorderLevel = item.ReorderLevel;
+                    existingItem.SKU = item.SKU;
+                    existingItem.Manufacturer = item.Manufacturer;
+                    existingItem.CategoryId = item.CategoryId;
+                    existingItem.SupplierId = item.SupplierId;
+                    existingItem.IsActive = item.IsActive;
+                    existingItem.LastUpdated = DateTime.UtcNow;
+
+                    if (!string.IsNullOrEmpty(serialCode))
+                    {
+                        if (existingItem.SerialNumber != null)
+                        {
+                            // Update existing serial number
+                            existingItem.SerialNumber.SerialCode = serialCode;
+                            existingItem.SerialNumber.Name = serialName;
+                            existingItem.SerialNumber.WarrantyInfo = warrantyInfo;
+                            existingItem.SerialNumber.ManufactureDate = manufactureDate;
+                            existingItem.SerialNumber.ExpiryDate = expiryDate;
+                        }
+                        else
+                        {
+                            // Create new serial number
+                            var serialNumber = new SerialNumber
+                            {
+                                SerialCode = serialCode,
+                                Name = serialName,
+                                WarrantyInfo = warrantyInfo,
+                                ManufactureDate = manufactureDate,
+                                ExpiryDate = expiryDate,
+                            };
+
+                            databaseContext.SerialNumbers.Add(serialNumber);
+                            await databaseContext.SaveChangesAsync(); // Save to get ID
+
+                            existingItem.SerailId = serialNumber.Id;
+                        }
+                    }
+                    else
+                    {
+                        // Remove serial number if serialCode is empty
+                        if (existingItem.SerialNumber != null)
+                        {
+                            databaseContext.SerialNumbers.Remove(existingItem.SerialNumber);
+                            existingItem.SerailId = null;
+                        }
+                    }
+                    databaseContext.Update(existingItem);
                     await databaseContext.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = $"Item '{item.Name}' updated successfully!";
+                    return RedirectToAction("Index");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -138,8 +190,12 @@ namespace MyAppMVC.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction("Index");
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"Error updating item: {ex.Message}");
+                }
             }
+            
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
             ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
 

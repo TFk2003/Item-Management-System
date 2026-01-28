@@ -61,7 +61,7 @@
                                         <dd class="col-sm-8">@(Model.Supplier != null ? Model.Supplier.CompanyName : "-")</dd>
 
                                         <dt class="col-sm-4">Serial Number</dt>
-                                        <dd class="col-sm-8">@(Model.SerialNumber != null ? "-" : Model.SerialNumber)</dd>
+                                        <dd class="col-sm-8">@(Model.SerialNumber != null ? Model.SerialNumber.SerialCode : "-")</dd>
 
                                         <dt class="col-sm-4">Status</dt>
                                         <dd class="col-sm-8">

@@ -26,7 +26,8 @@ namespace MyAppMVC.Controllers
                 TotalSuppliers = _context.Suppliers.Count(),
                 LowStockItems = _context.Items.Count(i => i.StockQuantity < i.ReorderLevel),
                 ActiveItems = _context.Items.Count(i => i.IsActive),
-                InactiveItems = _context.Items.Count(i => !i.IsActive)
+                InactiveItems = _context.Items.Count(i => !i.IsActive),
+                TotalInventoryValue = _context.Items.Sum(i => i.Price * i.StockQuantity)
             };
 
             dashboardStats.RecentTransactions = _context.ItemClients

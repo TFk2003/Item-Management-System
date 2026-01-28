@@ -35,8 +35,8 @@
                                     <label class="form-label">
                                         <i class="bi bi-calendar"></i> Order Date
                                     </label>
-                                    <input type="date" class="form-control"
-                                           value="@DateTime.Now.ToString("yyyy-MM-dd")" readonly />
+                                    <input type="datetime" class="form-control"
+                                           value="@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")" readonly />
                                     <div class="form-text">Today's date</div>
                                 </div>
                             </div>

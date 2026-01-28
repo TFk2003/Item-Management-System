@@ -9,6 +9,8 @@
         public int LowStockItems { get; set; }
         public int ActiveItems { get; set; }
         public int InactiveItems { get; set; }
+
+        public double TotalInventoryValue { get; set; }
         public List<TransactionViewModel> RecentTransactions { get; set; } = new();
         public List<CategoryReportViewModel> TopCategories { get; set; } = new();
     }

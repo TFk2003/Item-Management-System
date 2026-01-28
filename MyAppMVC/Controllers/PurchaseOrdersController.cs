@@ -48,7 +48,14 @@ namespace MyAppMVC.Controllers
         // GET: PurchaseOrders/Create
         public IActionResult Create()
         {
-            ViewData["Items"] = _context.Items.ToList();
+            ViewData["Items"] = _context.Items
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    sku = i.SKU,
+                    price = i.Price
+                }).ToList();
             ViewData["SupplierId"] = new SelectList(_context.Suppliers, "Id", "CompanyName");
             return View();
         }
@@ -58,7 +65,7 @@ namespace MyAppMVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,OrderNumber,SupplierId,ExpectedDeliveryDate,ActualDeliveryDate,TotalAmount")] PurchaseOrder purchaseOrder)
+        public async Task<IActionResult> Create([Bind("Id,OrderNumber,OrderDate,SupplierId,ExpectedDeliveryDate,ActualDeliveryDate,TotalAmount")] PurchaseOrder purchaseOrder)
         {
             if (ModelState.IsValid)
             {
@@ -66,6 +73,15 @@ namespace MyAppMVC.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewData["Items"] = _context.Items
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    sku = i.SKU,
+                    price = i.Price
+                }).ToList();
             ViewData["SupplierId"] = new SelectList(_context.Suppliers, "Id", "CompanyName", purchaseOrder.SupplierId);
             return View(purchaseOrder);
         }
@@ -92,7 +108,7 @@ namespace MyAppMVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,OrderNumber,SupplierId,ExpectedDeliveryDate,ActualDeliveryDate,Status,TotalAmount")] PurchaseOrder purchaseOrder)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,OrderNumber,OrderDate,SupplierId,ExpectedDeliveryDate,ActualDeliveryDate,Status,TotalAmount")] PurchaseOrder purchaseOrder)
         {
             if (id != purchaseOrder.Id)
             {
