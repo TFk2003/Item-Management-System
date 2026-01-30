@@ -180,10 +180,13 @@
                                                class="btn btn-outline-info" data-bs-toggle="tooltip" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a asp-action="Edit" asp-route-id="@order.Id"
-                                               class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
+                                            @if(order.Status != "Delivered")
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@order.Id"
+                                                   class="btn btn-outline-primary" data-bs-toggle="tooltip" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            }
                                             @if (order.Status == "Pending")
                                             {
                                                 <button class="btn btn-outline-success"

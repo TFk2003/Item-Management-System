@@ -1,0 +1,450 @@
+﻿@model IEnumerable<MyAppMVC.Models.ItemClient>
+
+@{
+    ViewData["Title"] = "Transactions";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-cart-check"></i> Transactions</h1>
+            <p class="text-muted">Manage client purchases and sales records</p>
+        </div>
+        <div class="btn-group">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Transaction
+            </a>
+            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" asp-action="Create"><i class="bi bi-cart-plus"></i> Manual Entry</a></li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#quickSaleModal">
+                        <i class="bi bi-lightning"></i> Quick Sale
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="#" onclick="exportTransactions()">
+                        <i class="bi bi-file-earmark-excel"></i> Export Report
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total Revenue</h6>
+                            <h2 class="card-text">@ViewBag.TotalRevenue.ToString("C")</h2>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Items Sold</h6>
+                            <h2 class="card-text">@ViewBag.TotalItemsSold</h2>
+                        </div>
+                        <i class="bi bi-box fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total Transactions</h6>
+                            <h2 class="card-text">@ViewBag.TotalTransactions</h2>
+                        </div>
+                        <i class="bi bi-receipt fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Avg. Transaction</h6>
+                            <h2 class="card-text">
+                                @((ViewBag.TotalTransactions > 0 ? ViewBag.TotalRevenue / ViewBag.TotalTransactions : 0).ToString("C"))
+                            </h2>
+                        </div>
+                        <i class="bi bi-graph-up fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Client</label>
+                    <select name="clientFilter" class="form-select">
+                        <option value="">All Clients</option>
+                        @foreach (var client in ViewBag.Clients)
+                        {
+                            <option value="@client.Value">@client.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="startDate" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="endDate" class="form-control" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-list-check"></i> All Transactions
+                <span class="badge bg-primary ms-2">@Model.Count() records</span>
+            </h5>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="printTransactions()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover" id="transactionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <small>@transaction.PurchasedDate.ToString("MMM dd, yyyy")</small><br>
+                                        <small class="text-muted">@transaction.PurchasedDate.ToString("hh:mm tt")</small>
+                                    </td>
+                                    <td>
+                                        @if (transaction.Client != null)
+                                        {
+                                            <strong>@transaction.Client.FirstName @transaction.Client.LastName</strong>
+                                
+                                            <br>
+                                            <small class="text-muted">@transaction.Client.Company</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Client not found</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (transaction.Item != null)
+                                        {
+                                            <strong>@transaction.Item.Name</strong>
+                                
+                                            <br>
+                                            <small class="text-muted">SKU: @transaction.Item.SKU</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Item not found</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">@transaction.Quantity</span>
+                                    </td>
+                                    <td>@transaction.UnitPrice.ToString("C")</td>
+                                    <td class="fw-bold text-success">@transaction.TotalPrice.ToString("C")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(transaction.Notes))
+                                        {
+                                            <small class="text-muted" title="@transaction.Notes">
+                                                @transaction.Notes.Truncate(30)
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Edit" asp-route-itemId="@transaction.ItemId"
+                                               asp-route-clientId="@transaction.ClientId"
+                                               class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-itemId="@transaction.ItemId"
+                                               asp-route-clientId="@transaction.ClientId"
+                                               class="btn btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <td colspan="5" class="text-end"><strong>Grand Total:</strong></td>
+                                <td><strong>@Model.Sum(t => t.TotalPrice).ToString("C")</strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Summary Statistics -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="bi bi-bar-chart"></i> Top Selling Items</h6>
+                            </div>
+                            <div class="card-body">
+                                @{
+                                    var topItems = Model
+                                    .GroupBy(t => t.Item?.Name ?? "Unknown")
+                                    .Select(g => new { Item = g.Key, Total = g.Sum(t => t.TotalPrice), Count = g.Sum(t => t.Quantity) })
+                                    .OrderByDescending(x => x.Total)
+                                    .Take(5)
+                                    .ToList();
+                                }
+                                @foreach (var item in topItems)
+                                {
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>@item.Item</span>
+                                            <span class="text-success">@item.Total.ToString("C")</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            @{
+                                                var maxTotal = topItems.Max(x => x.Total);
+                                                var percentage = maxTotal > 0 ? (item.Total / maxTotal * 100) : 0;
+                                            }
+                                            <div class="progress-bar bg-success" style="width: @percentage%"></div>
+                                        </div>
+                                        <small class="text-muted">@item.Count units sold</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="bi bi-people"></i> Top Clients</h6>
+                            </div>
+                            <div class="card-body">
+                                @{
+                                    var topClients = Model
+                                    .GroupBy(t => t.Client != null ? $"{t.Client.FirstName} {t.Client.LastName}" : "Unknown")
+                                    .Select(g => new { Client = g.Key, Total = g.Sum(t => t.TotalPrice), Count = g.Count() })
+                                    .OrderByDescending(x => x.Total)
+                                    .Take(5)
+                                    .ToList();
+                                }
+                                @foreach (var client in topClients)
+                                {
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>@client.Client</span>
+                                            <span class="text-primary">@client.Total.ToString("C")</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            @{
+                                                var maxClientTotal = topClients.Max(x => x.Total);
+                                                var clientPercentage = maxClientTotal > 0 ? (client.Total / maxClientTotal * 100) : 0;
+                                            }
+                                            <div class="progress-bar bg-primary" style="width: @clientPercentage%"></div>
+                                        </div>
+                                        <small class="text-muted">@client.Count transactions</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-cart display-1 text-muted"></i>
+                    <h3 class="mt-3">No transactions found</h3>
+                    <p class="text-muted">Start by recording your first sale</p>
+                    <a asp-action="Create" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle"></i> Create Transaction
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Quick Sale Modal -->
+<div class="modal fade" id="quickSaleModal" tabindex="-1" aria-labelledby="quickSaleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickSaleModalLabel">
+                    <i class="bi bi-lightning"></i> Quick Sale
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickSaleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Select Item</label>
+                        <select class="form-select" id="quickSaleItem" required>
+                            <option value="">-- Select Item --</option>
+                            <!-- Will be populated via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quickSaleQuantity" value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select Client</label>
+                        <select class="form-select" id="quickSaleClient" required>
+                            <option value="">-- Select Client --</option>
+                            <!-- Will be populated via JavaScript -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="processQuickSale()">
+                    <i class="bi bi-check-circle"></i> Process Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#transactionsTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'desc']], // Sort by date descending
+                columnDefs: [
+                    { orderable: false, targets: [7] } // Disable sorting for actions column
+                ]
+            });
+
+            // Load items and clients for quick sale modal
+            loadItemsAndClients();
+        });
+
+        function loadItemsAndClients() {
+            // In a real app, you would fetch this data from the server
+            const items = [
+                { id: 1, name: "Wireless Mouse", stock: 50, price: 25.99 },
+                { id: 2, name: "Mechanical Keyboard", stock: 30, price: 89.99 },
+                { id: 3, name: "Ergonomic Office Chair", stock: 15, price: 249.99 }
+            ];
+
+            const clients = [
+                { id: 1, name: "Michael Brown - TechCorp Solutions" },
+                { id: 2, name: "Jennifer Taylor - Finance Group LLC" },
+                { id: 3, name: "David Wilson - Wilson & Associates" }
+            ];
+
+            const itemSelect = $('#quickSaleItem');
+            const clientSelect = $('#quickSaleClient');
+
+            items.forEach(item => {
+                itemSelect.append(new Option(`${item.name} (Stock: ${item.stock}, $${item.price})`, item.id));
+            });
+
+            clients.forEach(client => {
+                clientSelect.append(new Option(client.name, client.id));
+            });
+        }
+
+        function processQuickSale() {
+            const itemId = $('#quickSaleItem').val();
+            const clientId = $('#quickSaleClient').val();
+            const quantity = $('#quickSaleQuantity').val();
+
+            if (!itemId || !clientId || !quantity) {
+                toastr.error('Please fill all required fields');
+                return;
+            }
+
+            // In a real app, you would submit via AJAX
+            // For now, redirect to quick sale page
+            window.location.href = '@Url.Action("QuickSale", "Transaction")' +
+                '?itemId=' + itemId +
+                '&quantity=' + quantity +
+                '&clientId=' + clientId;
+
+            $('#quickSaleModal').modal('hide');
+        }
+
+        function exportTransactions() {
+            toastr.info('Export functionality would be implemented here');
+        }
+
+        function printTransactions() {
+            window.print();
+        }
+    </script>
+}

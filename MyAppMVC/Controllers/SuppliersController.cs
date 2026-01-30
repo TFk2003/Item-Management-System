@@ -22,7 +22,11 @@ namespace MyAppMVC.Controllers
         // GET: Suppliers
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Suppliers.ToListAsync());
+            var suppliers = await _context.Suppliers
+                .Include(s => s.Items)
+                .Include(s => s.PurchaseOrders)
+                .ToListAsync();
+            return View(suppliers);
         }
 
         // GET: Suppliers/Details/5
@@ -34,6 +38,8 @@ namespace MyAppMVC.Controllers
             }
 
             var supplier = await _context.Suppliers
+                .Include(s => s.Items)
+                .Include(s => s.PurchaseOrders)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (supplier == null)
             {

@@ -1,4 +1,4 @@
-﻿@model MyAppMVC.Models.PurchaseOrder
+﻿@model MyAppMVC.ViewModels.PurchaseOrderViewModel
 
 @{
     ViewData["Title"] = "Edit Purchase Order";
@@ -14,12 +14,13 @@
                 <div class="card-body">
                     <form asp-action="Edit" class="needs-validation" novalidate>
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="OrderDate" />
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
                             Order ID: <strong>@Model.Id</strong> |
-                            Created: <strong>@Model.OrderDate.ToString("MMM dd, yyyy  HH:mm:ss")</strong> |
+                            Created: <strong>@Model.OrderDate.ToString("MMM dd, yyyy HH:mm:ss")</strong> |
                             Status: <span class="badge @GetStatusBadgeClass(Model.Status)">@Model.Status</span>
                         </div>
 
@@ -40,7 +41,7 @@
                                         <i class="bi bi-calendar"></i> Order Date
                                     </label>
                                     <input type="text" class="form-control"
-                                           value="@Model.OrderDate.ToString("MMM dd, yyyy  HH:mm:ss")" readonly />
+                                           value="@Model.OrderDate.ToString("MMM dd, yyyy HH:mm:ss")" readonly />
                                 </div>
                             </div>
                         </div>
@@ -58,9 +59,7 @@
                                         {
                                             @foreach (var item in suppliers)
                                             {
-                                                <option value="@item.Value" selected="@(item.Value == Model.SupplierId.ToString())">
-                                                    @item.Text
-                                                </option>
+                                                <option value="@item.Value">@item.Text</option>
                                             }
                                         }
                                     </select>
@@ -72,8 +71,7 @@
                                     <label asp-for="ExpectedDeliveryDate" class="form-label">
                                         <i class="bi bi-calendar-check"></i> Expected Delivery Date
                                     </label>
-                                    <input asp-for="ExpectedDeliveryDate" class="form-control" type="date"
-                                           value="@(Model.ExpectedDeliveryDate?.ToString("yyyy-MM-dd") ?? "")" />
+                                    <input asp-for="ExpectedDeliveryDate" class="form-control" type="date" />
                                     <span asp-validation-for="ExpectedDeliveryDate" class="text-danger"></span>
                                 </div>
                             </div>
@@ -87,10 +85,10 @@
                                         <i class="bi bi-activity"></i> Status
                                     </label>
                                     <select asp-for="Status" class="form-select">
-                                        <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
-                                        <option value="Shipped" selected="@(Model.Status == "Shipped")">Shipped</option>
-                                        <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
-                                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Shipped">Shipped</option>
+                                        <option value="Delivered">Delivered</option>
+                                        <option value="Cancelled">Cancelled</option>
                                     </select>
                                     <span asp-validation-for="Status" class="text-danger"></span>
                                 </div>
@@ -100,75 +98,84 @@
                                     <label asp-for="ActualDeliveryDate" class="form-label">
                                         <i class="bi bi-calendar-check"></i> Actual Delivery Date
                                     </label>
-                                    <input asp-for="ActualDeliveryDate" class="form-control" type="date"
-                                           value="@(Model.ActualDeliveryDate?.ToString("yyyy-MM-dd") ?? "")" />
+                                    <input asp-for="ActualDeliveryDate" class="form-control" type="date" />
                                     <span asp-validation-for="ActualDeliveryDate" class="text-danger"></span>
                                     <div class="form-text">Leave blank if not delivered yet</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Order Items Summary -->
-                        @if (Model.PurchaseOrderItems != null && Model.PurchaseOrderItems.Any())
-                        {
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5><i class="bi bi-list-check"></i> Order Items</h5>
+                        <!-- Items Selection -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="bi bi-cart-plus"></i> Order Items</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table" id="itemsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Quantity</th>
+                                                <th>Unit Price</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            <!-- Rows will be added dynamically -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-secondary">
+                                                <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                                <td id="subtotalAmount">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="table-secondary">
+                                                <td colspan="3" class="text-end"><strong>Tax (10%):</strong></td>
+                                                <td id="taxAmount">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="table-dark">
+                                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                                <td id="grandTotal">$0.00</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
                                 </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm">
-                                            <thead>
-                                                <tr>
-                                                    <th>Item</th>
-                                                    <th>Quantity</th>
-                                                    <th>Unit Price</th>
-                                                    <th>Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach (var item in Model.PurchaseOrderItems)
-                                                {
-                                                    <tr>
-                                                        <td>@item.Item?.Name</td>
-                                                        <td>@item.Quantity</td>
-                                                        <td>@item.UnitPrice.ToString("C")</td>
-                                                        <td>@item.TotalPrice.ToString("C")</td>
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                            <tfoot class="table-secondary">
-                                                <tr>
-                                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                                                    <td><strong>@Model.TotalAmount.ToString("C")</strong></td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
+
+                                <!-- Items Selector -->
+                                <div class="row mt-3">
+                                    <div class="col-md-8">
+                                        <select class="form-select" id="itemSelector">
+                                            <option value="">-- Select Item to Add --</option>
+                                            <!-- Will be populated via JavaScript -->
+                                        </select>
                                     </div>
-                                    <small class="text-muted">
-                                        <i class="bi bi-info-circle"></i> To edit items, please create a new purchase order or contact administrator.
-                                    </small>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control" id="itemQuantity" placeholder="Qty" min="1" value="1">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary w-100" onclick="addSelectedItem()">
+                                            Add
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        }
+                        </div>
 
                         <!-- Total Amount -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="TotalAmount" class="form-label">
-                                        <i class="bi bi-cash-stack"></i> Total Amount *
+                                        <i class="bi bi-cash-stack"></i> Total Amount
                                     </label>
-                                    <input asp-for="TotalAmount" type="number" step="0.01" class="form-control" required />
+                                    <input asp-for="TotalAmount" type="number" step="0.01" class="form-control" readonly
+                                           id="totalAmountInput" />
                                     <span asp-validation-for="TotalAmount" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="bi bi-chat-text"></i> Notes
-                                    </label>
-                                    <textarea class="form-control" rows="2" placeholder="Any updates or notes..."></textarea>
+                                    <div class="form-text">Calculated automatically from items</div>
                                 </div>
                             </div>
                         </div>
@@ -213,4 +220,183 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        let itemCounter = 0;
+        let items = [];
+        let existingItems = @Html.Raw(Json.Serialize(Model.Items));
+
+        $(document).ready(function() {
+            // Load items data from server
+            items = @Html.Raw(Json.Serialize(ViewData["Items"]));
+
+            // Populate item selector
+            const itemSelector = $('#itemSelector');
+            items.forEach(item => {
+                itemSelector.append(new Option(`${item.name} (${item.sku}) - $${item.price}`, item.id));
+            });
+
+            // Load existing items
+            if (existingItems && existingItems.length > 0) {
+                existingItems.forEach(existingItem => {
+                    const item = items.find(i => i.id == existingItem.itemId);
+                    if (item) {
+                        addItemRow(existingItem.itemId, existingItem.quantity, existingItem.unitPrice);
+                    }
+                });
+            }
+
+            calculateTotals();
+        });
+
+        function addItemRow(itemId = null, quantity = 1, unitPrice = 0) {
+            const item = itemId ? items.find(i => i.id == itemId) : null;
+            const rowIndex = itemCounter++;
+
+            const row = `
+                <tr id="itemRow_${rowIndex}" data-index="${rowIndex}">
+                    <td>
+                        <select class="form-select item-select" disabled onchange="updateItemPrice(this, ${rowIndex})">
+                            <option value="">-- Select Item --</option>
+                            ${items.map(i => `<option value="${i.id}" ${itemId == i.id ? 'selected' : ''}>${i.name} (${i.sku})</option>`).join('')}
+                        </select>
+                        <input type="hidden" name="Items[${rowIndex}].ItemId" class="item-id" value="${itemId || ''}" />
+                    </td>
+                    <td>
+                        <input type="number" name="Items[${rowIndex}].Quantity" class="form-control quantity-input" min="1" value="${quantity}"
+                               onchange="calculateRowTotal(${rowIndex}); calculateTotals()" required>
+                    </td>
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="Items[${rowIndex}].UnitPrice" class="form-control price-input" step="0.01" value="${item ? item.price : unitPrice}"
+                                   readonly>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-bold row-total">$${(quantity * (item ? item.price : unitPrice)).toFixed(2)}</span>
+                        <input type="hidden" class="row-total-input" value="${quantity * (item ? item.price : unitPrice)}" />
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItemRow(${rowIndex})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            $('#itemsTableBody').append(row);
+            calculateTotals();
+        }
+
+        function addSelectedItem() {
+            const itemId = $('#itemSelector').val();
+            const quantity = $('#itemQuantity').val() || 1;
+
+            if (!itemId) {
+                alert('Please select an item');
+                return;
+            }
+
+            const item = items.find(i => i.id == itemId);
+            if (item) {
+                addItemRow(itemId, quantity, item.price);
+                $('#itemSelector').val('');
+                $('#itemQuantity').val(1);
+            }
+        }
+
+        function updateItemPrice(select, rowIndex) {
+            const itemId = $(select).val();
+            const item = items.find(i => i.id == itemId);
+            const row = $(`#itemRow_${rowIndex}`);
+
+            if (item) {
+                row.find('.item-id').val(itemId);
+                row.find('.price-input').val(item.price);
+                calculateRowTotal(rowIndex);
+                calculateTotals();
+            }
+        }
+
+        function calculateRowTotal(rowIndex) {
+            const row = $(`#itemRow_${rowIndex}`);
+            const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
+            const price = parseFloat(row.find('.price-input').val()) || 0;
+            const total = quantity * price;
+
+            row.find('.row-total').text('$' + total.toFixed(2));
+            row.find('.row-total-input').val(total);
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+
+            $('.row-total-input').each(function() {
+                subtotal += parseFloat($(this).val()) || 0;
+            });
+
+            const tax = subtotal * 0.10; // 10% tax
+            const grandTotal = subtotal + tax;
+
+            $('#subtotalAmount').text('$' + subtotal.toFixed(2));
+            $('#taxAmount').text('$' + tax.toFixed(2));
+            $('#grandTotal').text('$' + grandTotal.toFixed(2));
+            $('#totalAmountInput').val(grandTotal.toFixed(2));
+        }
+
+        function removeItemRow(rowIndex) {
+            $(`#itemRow_${rowIndex}`).remove();
+            reindexItems();
+            calculateTotals();
+        }
+
+        function reindexItems() {
+            let index = 0;
+            $('#itemsTableBody tr').each(function() {
+                $(this).attr('id', `itemRow_${index}`);
+                $(this).attr('data-index', index);
+                $(this).find('.item-id').attr('name', `Items[${index}].ItemId`);
+                $(this).find('.quantity-input').attr('name', `Items[${index}].Quantity`);
+                $(this).find('.price-input').attr('name', `Items[${index}].UnitPrice`);
+
+                const btn = $(this).find('.btn-outline-danger');
+                btn.attr('onclick', `removeItemRow(${index})`);
+
+                const select = $(this).find('.item-select');
+                select.attr('onchange', `updateItemPrice(this, ${index})`);
+
+                const qtyInput = $(this).find('.quantity-input');
+                qtyInput.attr('onchange', `calculateRowTotal(${index}); calculateTotals()`);
+
+                index++;
+            });
+            itemCounter = index;
+        }
+
+        // Form validation
+        $('form').on('submit', function(event) {
+            // Ensure at least one item is added
+            const itemCount = $('#itemsTableBody tr').length;
+            if (itemCount === 0) {
+                event.preventDefault();
+                alert('Please add at least one item to the order');
+                return false;
+            }
+
+            // Validate all items have an ItemId
+            let valid = true;
+            $('.item-id').each(function() {
+                if (!$(this).val() || $(this).val() == '0') {
+                    valid = false;
+                }
+            });
+
+            if (!valid) {
+                event.preventDefault();
+                alert('Please select an item for all rows');
+                return false;
+            }
+        });
+    </script>
 }

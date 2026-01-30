@@ -213,12 +213,15 @@
                                     <i class="bi bi-check-circle"></i> Mark as Delivered
                                 </button>
                             }
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
-                                <i class="bi bi-pencil"></i> Edit Order
-                            </a>
-                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Delete
-                            </a>
+                            @if(Model.Status != "Delivered")
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Edit Order
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            }
                         </div>
                     </div>
                 </div>

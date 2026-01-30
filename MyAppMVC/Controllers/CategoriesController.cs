@@ -22,7 +22,10 @@ namespace MyAppMVC.Controllers
         // GET: Categories
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categories.ToListAsync());
+            var categories = await _context.Categories
+                .Include(c => c.Items)
+                .ToListAsync();
+            return View(categories);
         }
 
         // GET: Categories/Details/5
@@ -34,6 +37,7 @@ namespace MyAppMVC.Controllers
             }
 
             var category = await _context.Categories
+                .Include(c => c.Items)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (category == null)
             {
@@ -126,6 +130,7 @@ namespace MyAppMVC.Controllers
             }
 
             var category = await _context.Categories
+                .Include(c => c.Items)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (category == null)
             {

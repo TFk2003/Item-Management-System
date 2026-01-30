@@ -22,7 +22,10 @@ namespace MyAppMVC.Controllers
         // GET: Clients
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Clients.ToListAsync());
+            var clients = await _context.Clients
+                .Include(i => i.ItemClients)
+                .ToListAsync();
+            return View(clients);
         }
 
         // GET: Clients/Details/5
@@ -34,6 +37,7 @@ namespace MyAppMVC.Controllers
             }
 
             var client = await _context.Clients
+                .Include(i => i.ItemClients).ThenInclude(ic => ic.Item)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (client == null)
             {
@@ -127,6 +131,7 @@ namespace MyAppMVC.Controllers
             }
 
             var client = await _context.Clients
+                .Include(i => i.ItemClients)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (client == null)
             {

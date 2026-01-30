@@ -93,7 +93,7 @@
                                                     <td>@item.Name</td>
                                                     <td>@item.Price.ToString("C")</td>
                                                     <td>
-                                                        <span class="badge @(item.StockQuantity > 10 ? "bg-success" : "bg-warning")">
+                                                        <span class="badge @(item.StockQuantity > item.ReorderLevel ? "bg-success" : "bg-warning")">
                                                             @item.StockQuantity
                                                         </span>
                                                     </td>

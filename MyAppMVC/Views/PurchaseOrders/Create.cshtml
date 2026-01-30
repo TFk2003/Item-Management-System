@@ -1,4 +1,4 @@
-﻿@model MyAppMVC.Models.PurchaseOrder
+﻿@model MyAppMVC.ViewModels.PurchaseOrderViewModel
 @{
     ViewData["Title"] = "Create Purchase Order";
 }
@@ -21,11 +21,8 @@
                                     <label asp-for="OrderNumber" class="form-label">
                                         <i class="bi bi-hash"></i> Order Number *
                                     </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">PO-</span>
-                                        <input asp-for="OrderNumber" class="form-control" readonly
-                                               placeholder="001" value="@($"PO-{DateTime.Now:yyyyMMdd}-{new Random().Next(100, 999)}")" required />
-                                    </div>
+                                    <input asp-for="OrderNumber" class="form-control"
+                                           value="@($"PO-{DateTime.Now:yyyyMMdd}-{new Random().Next(100, 999)}")" required />
                                     <span asp-validation-for="OrderNumber" class="text-danger"></span>
                                     <div class="form-text">Auto-generated order number</div>
                                 </div>
@@ -78,9 +75,9 @@
                         <div class="card mb-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5><i class="bi bi-cart-plus"></i> Add Items to Order</h5>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItemRow()">
+                                @* <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItemRow()">
                                     <i class="bi bi-plus"></i> Add Item
-                                </button>
+                                </button> *@
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -117,8 +114,8 @@
                                     </table>
                                 </div>
 
-                                <!-- Hidden fields for items -->
-                                <div id="itemsData"></div>
+                                @* <!-- Hidden fields for items -->
+                                <div id="itemsData"></div> *@
 
                                 <!-- Items Selector -->
                                 <div class="row mt-3">
@@ -151,14 +148,6 @@
                                            id="totalAmountInput" value="0" />
                                     <span asp-validation-for="TotalAmount" class="text-danger"></span>
                                     <div class="form-text">Calculated automatically from items</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">
-                                        <i class="bi bi-chat-text"></i> Notes
-                                    </label>
-                                    <textarea class="form-control" rows="2" placeholder="Any special instructions or notes..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -198,33 +187,30 @@
             items.forEach(item => {
                 itemSelector.append(new Option(`${item.name} (${item.sku}) - $${item.price}`, item.id));
             });
-
-            // Add initial item row
-            addItemRow();
         });
 
         function addItemRow(itemId = null, quantity = 1, unitPrice = 0) {
             const item = itemId ? items.find(i => i.id == itemId) : null;
-            const rowId = `itemRow_${itemCounter++}`;
+            const rowIndex = itemCounter++;
 
             const row = `
-                <tr id="${rowId}">
+                <tr id="itemRow_${rowIndex}" data-index="${rowIndex}">
                     <td>
-                        <select class="form-select item-select" onchange="updateItemPrice(this, ${rowId})">
+                        <select class="form-select item-select" disabled onchange="updateItemPrice(this, ${rowIndex})">
                             <option value="">-- Select Item --</option>
                             ${items.map(i => `<option value="${i.id}" ${itemId == i.id ? 'selected' : ''}>${i.name} (${i.sku})</option>`).join('')}
                         </select>
-                        <input type="hidden" name="Items[${rowId}].ItemId" class="item-id" value="${itemId || ''}" />
+                        <input type="hidden" name="Items[${rowIndex}].ItemId" class="item-id" value="${itemId || ''}" />
                     </td>
                     <td>
-                        <input type="number" class="form-control quantity-input" min="1" value="${quantity}"
-                               onchange="calculateRowTotal('${rowId}'); calculateTotals()">
+                        <input type="number" name="Items[${rowIndex}].Quantity" class="form-control quantity-input" min="1" value="${quantity}"
+                               onchange="calculateRowTotal(${rowIndex}); calculateTotals()" required>
                     </td>
                     <td>
                         <div class="input-group">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control price-input" step="0.01" value="${item.price}"
-                                   onchange="calculateRowTotal('${rowId}'); calculateTotals()">
+                            <input type="number" name="Items[${rowIndex}].UnitPrice" class="form-control price-input" step="0.01" value="${item ? item.price : unitPrice}"
+                                   readonly>
                         </div>
                     </td>
                     <td>
@@ -232,7 +218,7 @@
                         <input type="hidden" class="row-total-input" value="${quantity * (item ? item.price : unitPrice)}" />
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItemRow('${rowId}')">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItemRow(${rowIndex})">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
@@ -260,21 +246,21 @@
             }
         }
 
-        function updateItemPrice(select, rowId) {
+        function updateItemPrice(select, rowIndex) {
             const itemId = $(select).val();
             const item = items.find(i => i.id == itemId);
-            const row = $(`#${rowId}`);
+            const row = $(`#itemRow_${rowIndex}`);
 
             if (item) {
                 row.find('.item-id').val(itemId);
                 row.find('.price-input').val(item.price);
-                calculateRowTotal(rowId);
+                calculateRowTotal(rowIndex);
                 calculateTotals();
             }
         }
 
-        function calculateRowTotal(rowId) {
-            const row = $(`#${rowId}`);
+        function calculateRowTotal(rowIndex) {
+            const row = $(`#itemRow_${rowIndex}`);
             const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
             const price = parseFloat(row.find('.price-input').val()) || 0;
             const total = quantity * price;
@@ -299,24 +285,57 @@
             $('#totalAmountInput').val(grandTotal.toFixed(2));
         }
 
-        function removeItemRow(rowId) {
-            $(`#${rowId}`).remove();
+        function removeItemRow(rowIndex) {
+            $(`#itemRow_${rowIndex}`).remove();
+            reindexItems();
             calculateTotals();
         }
 
-        // Form validation
-        $('.needs-validation').on('submit', function(event) {
-            if (!this.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            $(this).addClass('was-validated');
+        function reindexItems() {
+            let index = 0;
+            $('#itemsTableBody tr').each(function() {
+                $(this).attr('id', `itemRow_${index}`);
+                $(this).attr('data-index', index);
+                $(this).find('.item-id').attr('name', `Items[${index}].ItemId`);
+                $(this).find('.quantity-input').attr('name', `Items[${index}].Quantity`);
+                $(this).find('.price-input').attr('name', `Items[${index}].UnitPrice`);
 
+                const btn = $(this).find('.btn-outline-danger');
+                btn.attr('onclick', `removeItemRow(${index})`);
+
+                const select = $(this).find('.item-select');
+                select.attr('onchange', `updateItemPrice(this, ${index})`);
+
+                const qtyInput = $(this).find('.quantity-input');
+                qtyInput.attr('onchange', `calculateRowTotal(${index}); calculateTotals()`);
+
+                index++;
+            });
+            itemCounter = index;
+        }
+
+        // Form validation
+        $('form').on('submit', function(event) {
             // Ensure at least one item is added
             const itemCount = $('#itemsTableBody tr').length;
             if (itemCount === 0) {
                 event.preventDefault();
-                toastr.error('Please add at least one item to the order');
+                alert('Please add at least one item to the order');
+                return false;
+            }
+
+            // Validate all items have an ItemId
+            let valid = true;
+            $('.item-id').each(function() {
+                if (!$(this).val() || $(this).val() == '0') {
+                    valid = false;
+                }
+            });
+
+            if (!valid) {
+                event.preventDefault();
+                alert('Please select an item for all rows');
+                return false;
             }
         });
     </script>

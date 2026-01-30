@@ -21,6 +21,7 @@ namespace MyAppMVC.Controllers
             var items = await databaseContext.Items
                 .Include(s => s.SerialNumber)
                 .Include(c => c.Category)
+                .Include(i => i.ItemClients)
                 .Include(s => s.Supplier)
                 .ToListAsync();
             return View(items);
@@ -52,7 +53,8 @@ namespace MyAppMVC.Controllers
                             Name = serialName,
                             WarrantyInfo = warrantyInfo,
                             ManufactureDate = manufactureDate,
-                            ExpiryDate = expiryDate
+                            ExpiryDate = expiryDate,
+                            ItemId = item.Id
                         };
 
                         // Add serial number to context first
@@ -145,6 +147,7 @@ namespace MyAppMVC.Controllers
                             existingItem.SerialNumber.WarrantyInfo = warrantyInfo;
                             existingItem.SerialNumber.ManufactureDate = manufactureDate;
                             existingItem.SerialNumber.ExpiryDate = expiryDate;
+                            existingItem.SerialNumber.ItemId = id;
                         }
                         else
                         {
@@ -156,6 +159,7 @@ namespace MyAppMVC.Controllers
                                 WarrantyInfo = warrantyInfo,
                                 ManufactureDate = manufactureDate,
                                 ExpiryDate = expiryDate,
+                                ItemId = id
                             };
 
                             databaseContext.SerialNumbers.Add(serialNumber);
@@ -208,6 +212,7 @@ namespace MyAppMVC.Controllers
                 .Include(s => s.SerialNumber)
                 .Include(c => c.Category)
                 .Include(s => s.Supplier)
+                .Include(i => i.ItemClients)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (item == null)
@@ -241,6 +246,7 @@ namespace MyAppMVC.Controllers
                 .Include(s => s.SerialNumber)
                 .Include(c => c.Category)
                 .Include(s => s.Supplier)
+                .Include(i => i.ItemClients).ThenInclude(ic => ic.Client)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (item == null)
             {
