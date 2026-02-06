@@ -55,6 +55,16 @@
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Transaction" ? "active" : "")"
+                               href="#" id="transactionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-arrow-left-right"></i> Transactions
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="transactionDropdown">
+                                <li><a class="dropdown-item" asp-controller="Transaction" asp-action="Index"><i class="bi bi-list-ul"></i> All Transactions</a></li>
+                                <li><a class="dropdown-item" asp-controller="Transaction" asp-action="Create"><i class="bi bi-plus-circle"></i> New Transaction</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle @(ViewContext.RouteData.Values["Controller"]?.ToString() == "PurchaseOrders" || 
                                 ViewContext.RouteData.Values["Controller"]?.ToString() == "Suppliers" ? "active" : "")" 
                                href="#" id="purchaseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -131,6 +141,8 @@
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 

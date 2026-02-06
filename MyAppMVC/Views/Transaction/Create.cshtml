@@ -25,7 +25,7 @@
                                     <label asp-for="ClientId" class="form-label">
                                         <i class="bi bi-person-badge"></i> Select Client *
                                     </label>
-                                    <select asp-for="ClientId" class="form-select" required>
+                                    <select asp-for="ClientId" class="form-select" id="clientSelect" required>
                                         <option value="">-- Select Client --</option>
                                         @foreach (var client in ViewBag.Clients)
                                         {
@@ -49,8 +49,7 @@
                                             <label asp-for="ItemId" class="form-label">
                                                 <i class="bi bi-tag"></i> Select Item *
                                             </label>
-                                            <select asp-for="ItemId" class="form-select" id="itemSelect" required 
-                                                    onchange="updateItemDetails()">
+                                            <select asp-for="ItemId" class="form-select" id="itemSelect" required>
                                                 <option value="">-- Select Item --</option>
                                                 @foreach (var item in ViewBag.Items)
                                                 {
@@ -68,7 +67,7 @@
                                             <label asp-for="Quantity" class="form-label">
                                                 <i class="bi bi-123"></i> Quantity *
                                             </label>
-                                            <input asp-for="Quantity" class="form-control" type="number" min="1" value="1" required
+                                            <input asp-for="Quantity" class="form-control" id="quantityInput" type="number" min="1" value="1" required 
                                                    onchange="calculateTotal()" />
                                             <span asp-validation-for="Quantity" class="text-danger"></span>
                                             <div class="form-text" id="stockInfo">Available: 0</div>
@@ -108,8 +107,7 @@
                                             </label>
                                             <div class="input-group">
                                                 <span class="input-group-text">$</span>
-                                                <input asp-for="UnitPrice" class="form-control" type="number" step="0.01" required
-                                                       onchange="calculateTotal()" readonly>
+                                                <input asp-for="UnitPrice" class="form-control" id="unitPriceInput" type="number" step="0.01" required readonly>
                                             </div>
                                             <span asp-validation-for="UnitPrice" class="text-danger"></span>
                                             <div class="form-text">Sale price per unit</div>
@@ -163,9 +161,11 @@
                         </div>
 
                         <!-- Transaction Summary -->
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-receipt"></i> Transaction Summary</h6>
-                            <div class="row">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6><i class="bi bi-receipt"></i> Transaction Summary</h6>
+                            </div>
+                            <div class="card-body row">
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Client:</strong> <span id="summaryClient">Not selected</span></p>
                                     <p class="mb-1"><strong>Item:</strong> <span id="summaryItem">Not selected</span></p>
@@ -246,26 +246,42 @@
             const selectedOption = itemSelect.options[itemSelect.selectedIndex];
             const itemPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
             const itemStock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+            
             document.getElementById('itemDetails').style.display = selectedOption.value ? 'block' : 'none';
             document.getElementById('itemName').innerText = selectedOption.text;
             document.getElementById('itemPrice').innerText = `$${itemPrice.toFixed(2)}`;
             document.getElementById('availableStock').innerText = itemStock;
             document.getElementById('stockInfo').innerText = `Available: ${itemStock}`;
 
-            const unitPriceInput = document.querySelector('input[name="UnitPrice"]');
+            const unitPriceInput = document.getElementById('unitPriceInput');
             unitPriceInput.value = itemPrice.toFixed(2);
+            
+            updateSummary();
             calculateTotal();
         }
+
         function calculateTotal() {
-            const quantity = parseInt(document.querySelector('input[asp-for="Quantity"]').value) || 0;
-            const unitPrice = parseFloat(document.querySelector('input[asp-for="UnitPrice"]').value) || 0;
+            const quantity = parseInt(document.getElementById('quantityInput').value) || 0;
+            const unitPrice = parseFloat(document.getElementById('unitPriceInput').value) || 0;
             const totalAmount = quantity * unitPrice;
+            
             document.getElementById('totalAmount').value = totalAmount.toFixed(2);
-            // Update summary
             document.getElementById('summaryQuantity').innerText = quantity;
             document.getElementById('summaryUnitPrice').innerText = unitPrice.toFixed(2);
             document.getElementById('summaryTotal').innerText = totalAmount.toFixed(2);
         }
+
+        function updateSummary() {
+            const clientSelect = document.getElementById('clientSelect');
+            const itemSelect = document.getElementById('itemSelect');
+            
+            const selectedClient = clientSelect.value ? clientSelect.options[clientSelect.selectedIndex].text : 'Not selected';
+            const selectedItem = itemSelect.value ? itemSelect.options[itemSelect.selectedIndex].text : 'Not selected';
+            
+            document.getElementById('summaryClient').innerText = selectedClient;
+            document.getElementById('summaryItem').innerText = selectedItem;
+        }
+
         function clearForm() {
             document.querySelector('form').reset();
             document.getElementById('itemDetails').style.display = 'none';
@@ -276,5 +292,21 @@
             document.getElementById('summaryUnitPrice').innerText = '0.00';
             document.getElementById('summaryTotal').innerText = '0.00';
         }
+
+        // Initialize event listeners when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const clientSelect = document.getElementById('clientSelect');
+            const itemSelect = document.getElementById('itemSelect');
+            const quantityInput = document.getElementById('quantityInput');
+
+            // Update summary when client selection changes
+            clientSelect.addEventListener('change', updateSummary);
+
+            // Update summary and details when item selection changes
+            itemSelect.addEventListener('change', updateItemDetails);
+
+            // Update totals when quantity changes
+            quantityInput.addEventListener('input', calculateTotal);
+        });
     </script>
 }

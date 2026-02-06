@@ -1,0 +1,242 @@
+﻿@model MyAppMVC.Models.ItemClient
+
+@{
+    ViewData["Title"] = "Delete Transaction";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-trash"></i> Delete Transaction - Confirmation</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Warning Alert -->
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Warning!
+                        </h5>
+                        <p class="mb-0">
+                            Are you sure you want to delete this transaction? This action cannot be undone.
+                        </p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Stock Impact:</strong> Deleting this transaction will restore 
+                            <span class="badge bg-success">@Model.Quantity units</span> of 
+                            <strong>@Model.Item?.Name</strong> back to inventory.
+                        </p>
+                    </div>
+
+                    <!-- Client Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-person"></i> Client Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-person-badge"></i> Client Name:</strong><br>
+                                        <span class="text-muted">@($"{Model.Client?.FirstName} {Model.Client?.LastName}")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-building"></i> Company:</strong><br>
+                                        <span class="text-muted">@Model.Client?.Company</span>
+                                    </p>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Client?.Email))
+                            {
+                                <p class="mb-0">
+                                    <strong><i class="bi bi-envelope"></i> Email:</strong>
+                                    <span class="text-muted">@Model.Client?.Email</span>
+                                </p>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Item Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-box"></i> Item Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="border rounded p-3 bg-light">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1">@Model.Item?.Name</h6>
+                                        @if (!string.IsNullOrEmpty(Model.Item?.Description))
+                                        {
+                                            <small class="text-muted">@Model.Item?.Description</small>
+                                        }
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <div>
+                                            <small>Category:</small><br>
+                                            <span class="badge bg-info">@Model.Item?.Category?.Name</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-box-seam"></i> Current Stock:</strong>
+                                        <span class="badge bg-secondary">@Model.Item?.StockQuantity units</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-arrow-up-circle"></i> After Deletion:</strong>
+                                        <span class="badge bg-success">@(Model.Item?.StockQuantity + Model.Quantity) units</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Details -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-receipt"></i> Transaction Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-123"></i> Quantity
+                                        </label>
+                                        <div class="form-control-plaintext border rounded p-2 bg-light">
+                                            @Model.Quantity units
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-currency-dollar"></i> Unit Price
+                                        </label>
+                                        <div class="form-control-plaintext border rounded p-2 bg-light">
+                                            $@Model.UnitPrice.ToString("F2")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-calendar"></i> Purchase Date
+                                        </label>
+                                        <div class="form-control-plaintext border rounded p-2 bg-light">
+                                            @Model.PurchasedDate.ToString("ddd, MMM dd, yyyy - hh:mm tt")
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">
+                                            <i class="bi bi-calculator"></i> Total Amount
+                                        </label>
+                                        <div class="form-control-plaintext border rounded p-2 bg-light fw-bold text-primary">
+                                            $@Model.TotalPrice.ToString("F2")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Notes))
+                            {
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-0">
+                                            <label class="form-label fw-bold">
+                                                <i class="bi bi-chat-text"></i> Notes
+                                            </label>
+                                            <div class="form-control-plaintext border rounded p-2 bg-light">
+                                                @Model.Notes
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Deletion Summary -->
+                    <div class="alert alert-danger">
+                        <h6><i class="bi bi-exclamation-octagon"></i> Deletion Summary</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Transaction ID:</strong> Item #@Model.ItemId - Client #@Model.ClientId</p>
+                                <p class="mb-1"><strong>Amount to be refunded:</strong> $@Model.TotalPrice.ToString("F2")</p>
+                                <p class="mb-0"><strong>Stock to be restored:</strong> @Model.Quantity units</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Item:</strong> @Model.Item?.Name</p>
+                                <p class="mb-1"><strong>Client:</strong> @($"{Model.Client?.FirstName} {Model.Client?.LastName}")</p>
+                                <p class="mb-0"><strong>Date:</strong> @Model.PurchasedDate.ToString("MM/dd/yyyy")</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="ItemId" />
+                        <input type="hidden" asp-for="ClientId" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-shield-check"></i> Confirm Deletion
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    I understand that this action cannot be undone
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="bi bi-trash-fill"></i> Confirm Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Add animation to warning alert
+        document.addEventListener('DOMContentLoaded', function() {
+            const alertElement = document.querySelector('.alert-warning');
+            if (alertElement) {
+                alertElement.style.animation = 'pulse 2s infinite';
+            }
+        });
+
+        $(document).ready(function() {
+            // Enable delete button only when confirmed
+            $('#confirmDelete').change(function() {
+                $('#deleteBtn').prop('disabled', !$(this).is(':checked'));
+            });
+
+            // Double-check before submitting
+            $('#deleteBtn').click(function(e) {
+                if (!confirm('Are you absolutely sure you want to delete this transaction?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+  }

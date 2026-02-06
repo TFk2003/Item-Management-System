@@ -1,0 +1,286 @@
+﻿@model MyAppMVC.Models.ItemClient
+
+@{
+    ViewData["Title"] = "Edit Transaction";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4><i class="bi bi-pencil-square"></i> Edit Transaction</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        
+                        <!-- Hidden fields for composite key -->
+                        <input type="hidden" asp-for="ItemId" />
+                        <input type="hidden" asp-for="ClientId" />
+                        
+                        <!-- Client Information (Read-only) -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="bi bi-person"></i> Client Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-person-badge"></i> Client
+                                    </label>
+                                    <input type="text" class="form-control" 
+                                           value="@($"{Model.Client?.FirstName} {Model.Client?.LastName} - {Model.Client?.Company}")" 
+                                           readonly />
+                                    <div class="form-text">Client cannot be changed for existing transactions</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Item Information (Read-only) -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="bi bi-box"></i> Item Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-tag"></i> Item
+                                    </label>
+                                    <input type="text" class="form-control" 
+                                           value="@Model.Item?.Name" 
+                                           readonly />
+                                    <div class="form-text">Item cannot be changed for existing transactions</div>
+                                </div>
+
+                                <!-- Item Details Display -->
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>@Model.Item?.Name</h6>
+                                            <small class="text-muted">@Model.Item?.Description</small>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <div>
+                                                <small>Current Price: <span class="fw-bold">$@Model.Item?.Price.ToString("F2")</span></small><br>
+                                                <small>Available Stock: <span class="badge bg-success">@Model.Item?.StockQuantity</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Pricing -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="bi bi-123"></i> Quantity & Pricing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> 
+                                    <strong>Original Quantity:</strong> @Model.Quantity units | 
+                                    <strong>Current Available Stock:</strong> @Model.Item?.StockQuantity units
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="Quantity" class="form-label">
+                                                <i class="bi bi-123"></i> New Quantity *
+                                            </label>
+                                            <input asp-for="Quantity" class="form-control" type="number" min="1" required
+                                                   onchange="calculateTotal()" id="quantityInput" />
+                                            <span asp-validation-for="Quantity" class="text-danger"></span>
+                                            <div class="form-text" id="stockInfo">
+                                                Max available: @(Model.Item?.StockQuantity + Model.Quantity) units
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="UnitPrice" class="form-label">
+                                                <i class="bi bi-currency-dollar"></i> Unit Price
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input asp-for="UnitPrice" class="form-control" type="number" step="0.01" 
+                                                       readonly id="unitPriceInput">
+                                            </div>
+                                            <div class="form-text">Original sale price</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="bi bi-calculator"></i> Total Amount
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="text" class="form-control fw-bold" id="totalAmount" 
+                                                       value="@Model.TotalPrice.ToString("F2")" readonly />
+                                            </div>
+                                            <div class="form-text">Calculated automatically</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="bi bi-info-circle"></i> Additional Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="PurchasedDate" class="form-label">
+                                                <i class="bi bi-calendar"></i> Purchase Date
+                                            </label>
+                                            <input asp-for="PurchasedDate" class="form-control" type="datetime-local" />
+                                            <span asp-validation-for="PurchasedDate" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="Notes" class="form-label">
+                                                <i class="bi bi-chat-text"></i> Notes
+                                            </label>
+                                            <textarea asp-for="Notes" class="form-control" rows="2" 
+                                                      placeholder="Any special notes about this transaction..."></textarea>
+                                            <span asp-validation-for="Notes" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transaction Summary -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="bi bi-receipt"></i> Updated Transaction Summary</h6>
+                            </div>
+                            <div class="card-body row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Client:</strong> <span id="summaryClient">@($"{Model.Client?.FirstName} {Model.Client?.LastName}")</span></p>
+                                    <p class="mb-1"><strong>Item:</strong> <span id="summaryItem">@Model.Item?.Name</span></p>
+                                    <p class="mb-1"><strong>Quantity:</strong> <span id="summaryQuantity">@Model.Quantity</span> units</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Unit Price:</strong> $<span id="summaryUnitPrice">@Model.UnitPrice.ToString("F2")</span></p>
+                                    <p class="mb-1"><strong>Total:</strong> $<span id="summaryTotal" class="text-success fw-bold">@Model.TotalPrice.ToString("F2")</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Summary -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="bi bi-arrow-repeat"></i> Changes Preview</h6>
+                            </div>
+                            <p class="card-body mb-0" id="changesSummary">
+                                <i class="bi bi-info-circle"></i> Modify the quantity above to see the stock impact.
+                            </p>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetToOriginal()">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Reset Changes
+                                </button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-check-circle"></i> Update Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Store original values
+        const originalQuantity = @Model.Quantity;
+        const originalTotal = @Model.TotalPrice.ToString("F2");
+        const unitPrice = @Model.UnitPrice.ToString("F2");
+        const availableStock = @Model.Item?.StockQuantity;
+        const maxAllowedQuantity = availableStock + originalQuantity;
+
+        function calculateTotal() {
+            const quantity = parseInt(document.getElementById('quantityInput').value) || 0;
+            const price = parseFloat(document.getElementById('unitPriceInput').value) || 0;
+            const totalAmount = quantity * price;
+            
+            // Update total display
+            document.getElementById('totalAmount').value = totalAmount.toFixed(2);
+            
+            // Update summary
+            document.getElementById('summaryQuantity').innerText = quantity;
+            document.getElementById('summaryTotal').innerText = totalAmount.toFixed(2);
+            
+            // Update changes summary
+            updateChangesSummary(quantity, totalAmount);
+            
+            // Validate stock
+            validateStock(quantity);
+        }
+
+        function updateChangesSummary(newQuantity, newTotal) {
+            const quantityDiff = newQuantity - originalQuantity;
+            const totalDiff = newTotal - originalTotal;
+            
+            let message = '';
+            
+            if (quantityDiff === 0) {
+                message = '<i class="bi bi-info-circle"></i> No quantity changes.';
+            } else if (quantityDiff > 0) {
+                message = `<i class="bi bi-arrow-up text-danger"></i> <strong>Increasing by ${quantityDiff} units</strong> - Stock will decrease by ${quantityDiff} units. Total increase: $${totalDiff.toFixed(2)}`;
+            } else {
+                message = `<i class="bi bi-arrow-down text-success"></i> <strong>Decreasing by ${Math.abs(quantityDiff)} units</strong> - Stock will be restored by ${Math.abs(quantityDiff)} units. Total decrease: $${Math.abs(totalDiff).toFixed(2)}`;
+            }
+            
+            document.getElementById('changesSummary').innerHTML = message;
+        }
+
+        function validateStock(quantity) {
+            const quantityInput = document.getElementById('quantityInput');
+            const stockInfo = document.getElementById('stockInfo');
+            
+            if (quantity > maxAllowedQuantity) {
+                quantityInput.classList.add('is-invalid');
+                stockInfo.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Exceeds available stock! Max: ${maxAllowedQuantity} units</span>`;
+            } else if (quantity < 1) {
+                quantityInput.classList.add('is-invalid');
+                stockInfo.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Quantity must be at least 1</span>`;
+            } else {
+                quantityInput.classList.remove('is-invalid');
+                stockInfo.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Valid quantity. Max available: ${maxAllowedQuantity} units</span>`;
+            }
+        }
+
+        function resetToOriginal() {
+            document.getElementById('quantityInput').value = originalQuantity;
+            calculateTotal();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateTotal();
+        });
+
+        // Add real-time validation
+        document.getElementById('quantityInput').addEventListener('input', function() {
+            calculateTotal();
+        });
+    </script>
+}

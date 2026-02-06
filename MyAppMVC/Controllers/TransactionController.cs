@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyAppMVC.Data;
 using MyAppMVC.Models;
+using Newtonsoft.Json;
 
 namespace MyAppMVC.Controllers
 {
@@ -48,6 +49,25 @@ namespace MyAppMVC.Controllers
                 .Where(c => c.IsActive)
                 .Select(c => new { c.Id, Display = $"{c.FirstName} {c.LastName} - {c.Company}" })
                 .ToListAsync(), "Id", "Display");
+
+            ViewData["Items"] = await _databaseContext.Items
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    stock = i.StockQuantity,
+                    price = i.Price
+                }).ToListAsync();
+
+            ViewData["Clients2"] = await _databaseContext.Clients
+                .Select(c => new 
+                { 
+                    id = c.Id, 
+                    firstName = c.FirstName, 
+                    lastName = c.LastName, 
+                    company = c.Company 
+                })
+                .ToListAsync();
 
             return View(transaction);
         }
@@ -184,7 +204,7 @@ namespace MyAppMVC.Controllers
         public async Task<IActionResult> Delete(int itemId, int clientId)
         {
             var itemClient = await _databaseContext.ItemClients
-                .Include(ic => ic.Item)
+                .Include(ic => ic.Item).ThenInclude(i => i.Category)
                 .Include(ic => ic.Client)
                 .FirstOrDefaultAsync(ic => ic.ItemId == itemId && ic.ClientId == clientId);
 
@@ -275,33 +295,68 @@ namespace MyAppMVC.Controllers
         }
 
         // Quick Sale Action
-        public async Task<IActionResult> QuickSale(int itemId)
+        public async Task<IActionResult> QuickSale(int itemId, int quantity, int clientId)
         {
             var item = await _databaseContext.Items
                 .Include(i => i.Category)
                 .FirstOrDefaultAsync(i => i.Id == itemId);
 
-            if (item == null)
+            var client = await _databaseContext.Clients.FirstOrDefaultAsync(c => c.Id == clientId);
+
+            if (item == null || client == null)
             {
                 return NotFound();
             }
 
-            var viewModel = new ItemClient
+            ItemClient viewModel = new ItemClient
             {
                 ItemId = itemId,
+                ClientId = clientId,
                 Item = item,
+                Client = client,
                 UnitPrice = item.Price,
-                Quantity = 1,
-                PurchasedDate = DateTime.UtcNow
+                Quantity = quantity,
+                PurchasedDate = DateTime.UtcNow,
+                Notes = "Created by Quick Sale"
             };
+            TempData["ItemClient"] = JsonConvert.SerializeObject(viewModel, new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            });
+            //await PopulateDropdowns();
+            return RedirectToAction("QuickSale2");
+        }
+
+        // GET: Display confirmation page
+        public async Task<IActionResult> QuickSale2()
+        {
+            if (TempData["ItemClient"] == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var itemClientJson = TempData["ItemClient"]?.ToString();
+            if (string.IsNullOrEmpty(itemClientJson))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var itemClient = JsonConvert.DeserializeObject<ItemClient>(itemClientJson);
+            
+            // Reload navigation properties for display
+            itemClient.Item = await _databaseContext.Items
+                .Include(i => i.Category)
+                .FirstOrDefaultAsync(i => i.Id == itemClient.ItemId);
+            itemClient.Client = await _databaseContext.Clients
+                .FirstOrDefaultAsync(c => c.Id == itemClient.ClientId);
 
             await PopulateDropdowns();
-            return View(viewModel);
+            return View(itemClient);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> QuickSale(ItemClient itemClient)
+        public async Task<IActionResult> QuickSale2(ItemClient itemClient)
         {
             if (ModelState.IsValid)
             {
@@ -309,7 +364,7 @@ namespace MyAppMVC.Controllers
             }
 
             await PopulateDropdowns();
-            return View(itemClient);
+            return RedirectToAction(nameof(Index));
         }
 
         private bool ItemClientExists(int itemId, int clientId)

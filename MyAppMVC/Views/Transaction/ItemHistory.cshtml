@@ -1,0 +1,228 @@
+@model IEnumerable<MyAppMVC.Models.ItemClient>
+
+@{
+    ViewData["Title"] = "Item Sales History";
+    var item = ViewBag.Item as MyAppMVC.Models.Item;
+    var totalSold = (int)ViewBag.TotalSold;
+    var totalRevenue = (double)ViewBag.TotalRevenue;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="bi bi-box-seam-fill"></i> Item Sales History</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Item Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-box"></i> Item Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-tag"></i> Name:</strong><br />
+                                        <span class="ms-4">@item.Name</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-upc"></i> SKU:</strong><br />
+                                        <span class="ms-4">@(item.SKU ?? "N/A")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-currency-dollar"></i> Current Price:</strong><br />
+                                        <span class="ms-4 text-success fw-bold">$@item.Price.ToString("N2")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-box-seam"></i> Current Stock:</strong><br />
+                                        <span class="ms-4">
+                                            @if (item.StockQuantity > item.ReorderLevel)
+                                            {
+                                                <span class="badge bg-success">@item.StockQuantity units</span>
+                                            }
+                                            else if (item.StockQuantity > 0)
+                                            {
+                                                <span class="badge bg-warning text-dark">@item.StockQuantity units</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            }
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <p class="mb-0">
+                                            <strong><i class="bi bi-card-text"></i> Description:</strong><br />
+                                            <span class="ms-4 text-muted">@item.Description</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card text-white bg-primary">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="card-title mb-0">
+                                                <i class="bi bi-receipt"></i> Total Sales
+                                            </h6>
+                                            <h2 class="mb-0 mt-2">@Model.Count()</h2>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-graph-up-arrow" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-info">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="card-title mb-0">
+                                                <i class="bi bi-boxes"></i> Total Units Sold
+                                            </h6>
+                                            <h2 class="mb-0 mt-2">@totalSold</h2>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-box-seam" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="card-title mb-0">
+                                                <i class="bi bi-cash-stack"></i> Total Revenue
+                                            </h6>
+                                            <h2 class="mb-0 mt-2">$@totalRevenue.ToString("N2")</h2>
+                                        </div>
+                                        <div>
+                                            <i class="bi bi-currency-dollar" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="bi bi-list-ul"></i> Sales Details</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th><i class="bi bi-calendar"></i> Date</th>
+                                                <th><i class="bi bi-person"></i> Client</th>
+                                                <th><i class="bi bi-building"></i> Company</th>
+                                                <th class="text-end"><i class="bi bi-123"></i> Quantity</th>
+                                                <th class="text-end"><i class="bi bi-currency-dollar"></i> Unit Price</th>
+                                                <th class="text-end"><i class="bi bi-calculator"></i> Total</th>
+                                                <th><i class="bi bi-chat-text"></i> Notes</th>
+                                                <th class="text-center"><i class="bi bi-gear"></i> Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var transaction in Model)
+                                            {
+                                                <tr>
+                                                    <td>@transaction.PurchasedDate.ToString("MM/dd/yyyy")</td>
+                                                    <td>
+                                                        <i class="bi bi-person-circle"></i>
+                                                        @transaction.Client?.FirstName @transaction.Client?.LastName
+                                                    </td>
+                                                    <td>@(transaction.Client?.Company ?? "N/A")</td>
+                                                    <td class="text-end">@transaction.Quantity</td>
+                                                    <td class="text-end">$@transaction.UnitPrice.ToString("N2")</td>
+                                                    <td class="text-end fw-bold text-success">$@transaction.TotalPrice.ToString("N2")</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(transaction.Notes))
+                                                        {
+                                                            <span title="@transaction.Notes">
+                                                                @(transaction.Notes.Length > 30 ? transaction.Notes.Substring(0, 30) + "..." : transaction.Notes)
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">-</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <a asp-action="Edit" asp-route-itemId="@transaction.ItemId" asp-route-clientId="@transaction.ClientId" 
+                                                               class="btn btn-outline-primary" title="Edit">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </a>
+                                                            <a asp-action="Delete" asp-route-itemId="@transaction.ItemId" asp-route-clientId="@transaction.ClientId" 
+                                                               class="btn btn-outline-danger" title="Delete">
+                                                                <i class="bi bi-trash"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-secondary fw-bold">
+                                                <td colspan="3" class="text-end">Total:</td>
+                                                <td class="text-end">@totalSold units</td>
+                                                <td></td>
+                                                <td class="text-end text-success">$@totalRevenue.ToString("N2")</td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle"></i> No sales recorded for this item yet.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Transactions
+                        </a>
+                        <a asp-controller="Item" asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-success">
+                            <i class="bi bi-box-seam"></i> View Item Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

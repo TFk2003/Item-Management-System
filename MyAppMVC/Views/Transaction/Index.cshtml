@@ -72,7 +72,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title">Items Sold</h6>
-                            <h2 class="card-text">@ViewBag.TotalItemsSold</h2>
+                            <h2 class="card-text">@ViewBag.TotalItemSold</h2>
                         </div>
                         <i class="bi bi-box fs-1 opacity-50"></i>
                     </div>
@@ -381,13 +381,14 @@
     <script>
         $(document).ready(function() {
             // Initialize DataTable
-            $('#transactionsTable').DataTable({
+            $('#transactionsTable').dataTable({
                 pageLength: 25,
                 order: [[0, 'desc']], // Sort by date descending
                 columnDefs: [
                     { orderable: false, targets: [7] } // Disable sorting for actions column
                 ]
             });
+			console.log('Transactions page loaded');
 
             // Load items and clients for quick sale modal
             loadItemsAndClients();
@@ -395,18 +396,9 @@
 
         function loadItemsAndClients() {
             // In a real app, you would fetch this data from the server
-            const items = [
-                { id: 1, name: "Wireless Mouse", stock: 50, price: 25.99 },
-                { id: 2, name: "Mechanical Keyboard", stock: 30, price: 89.99 },
-                { id: 3, name: "Ergonomic Office Chair", stock: 15, price: 249.99 }
-            ];
-
-            const clients = [
-                { id: 1, name: "Michael Brown - TechCorp Solutions" },
-                { id: 2, name: "Jennifer Taylor - Finance Group LLC" },
-                { id: 3, name: "David Wilson - Wilson & Associates" }
-            ];
-
+            const items = @Html.Raw(Json.Serialize(ViewData["Items"]));
+			const clients = @Html.Raw(Json.Serialize(ViewData["Clients2"]));
+            console.log('clients:', clients);
             const itemSelect = $('#quickSaleItem');
             const clientSelect = $('#quickSaleClient');
 
@@ -415,7 +407,8 @@
             });
 
             clients.forEach(client => {
-                clientSelect.append(new Option(client.name, client.id));
+                clientSelect.append(new Option(`${client.firstName} ${client.lastName} - ${client.company}`, client.id));
+				console.log('Added client:', client.id);
             });
         }
 

@@ -1,0 +1,166 @@
+@model MyAppMVC.Models.ItemClient
+
+@{
+    ViewData["Title"] = "Quick Sale Confirmation";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4><i class="bi bi-lightning-charge"></i> Quick Sale Confirmation</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Alert Message -->
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> Please review the transaction details below and confirm to complete the sale.
+                    </div>
+
+                    <!-- Client Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-person"></i> Client Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-person-badge"></i> Client Name:</strong><br />
+                                        <span class="ms-4">@Model.Client?.FirstName @Model.Client?.LastName</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-building"></i> Company:</strong><br />
+                                        <span class="ms-4">@(Model.Client?.Company ?? "N/A")</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-box"></i> Item Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-tag"></i> Item Name:</strong><br />
+                                        <span class="ms-4">@Model.Item?.Name</span>
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-folder"></i> Category:</strong><br />
+                                        <span class="ms-4">@(Model.Item?.Category?.Name ?? "N/A")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-123"></i> Quantity:</strong><br />
+                                        <span class="ms-4 badge bg-primary fs-6">@Model.Quantity units</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-cash-stack"></i> Pricing Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-currency-dollar"></i> Unit Price:</strong><br />
+                                        <span class="ms-4 fs-5">$@Model.UnitPrice.ToString("N2")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-x"></i> Quantity:</strong><br />
+                                        <span class="ms-4 fs-5">@Model.Quantity</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-calculator"></i> Total Amount:</strong><br />
+                                        <span class="ms-4 fs-4 text-success fw-bold">$@Model.TotalPrice.ToString("N2")</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="bi bi-info-circle"></i> Additional Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-calendar"></i> Purchase Date:</strong><br />
+                                        <span class="ms-4">@Model.PurchasedDate.ToString("g")</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-chat-text"></i> Notes:</strong><br />
+                                        <span class="ms-4">@(Model.Notes ?? "N/A")</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Summary -->
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-receipt"></i> Transaction Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Client:</strong> @Model.Client?.FirstName @Model.Client?.LastName</p>
+                                    <p class="mb-1"><strong>Item:</strong> @Model.Item?.Name</p>
+                                    <p class="mb-1"><strong>Quantity:</strong> @Model.Quantity units</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Unit Price:</strong> $@Model.UnitPrice.ToString("N2")</p>
+                                    <p class="mb-1"><strong>Total Amount:</strong> <span class="text-success fw-bold">$@Model.TotalPrice.ToString("N2")</span></p>
+                                    <p class="mb-1"><strong>Date:</strong> @Model.PurchasedDate.ToString("g")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <form asp-action="QuickSale2" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ItemId" />
+                        <input type="hidden" asp-for="ClientId" />
+                        <input type="hidden" asp-for="Quantity" />
+                        <input type="hidden" asp-for="UnitPrice" />
+                        <input type="hidden" asp-for="PurchasedDate" />
+                        <input type="hidden" asp-for="Notes" />
+                        
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Confirm Sale
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

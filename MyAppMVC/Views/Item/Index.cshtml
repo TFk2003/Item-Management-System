@@ -149,6 +149,10 @@
                                                class="btn btn-outline-info" data-bs-toggle="tooltip" title="Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
+                                            <a asp-action="ItemHistory" asp-controller="Transaction" asp-route-id="@item.Id"
+                                                class="btn btn-outline-success" data-bs-toggle="tooltip" title="History">
+                                                <i class="bi bi-clock-history"></i>
+                                            </a>
                                             <a asp-action="Delete" asp-route-id="@item.Id"
                                                class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete">
                                                 <i class="bi bi-trash"></i>
