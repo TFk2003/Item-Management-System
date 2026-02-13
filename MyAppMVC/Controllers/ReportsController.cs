@@ -152,6 +152,7 @@ namespace MyAppMVC.Controllers
 
             return View(viewModel);
         }
+
         public async Task<IActionResult> Clients()
         {
             var clients = await _context.Clients
@@ -180,7 +181,7 @@ namespace MyAppMVC.Controllers
                     Email = c.Email,
                     TotalPurchases = c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0,
                     PurchaseCount = c.ItemClients?.Count ?? 0,
-                    LastPurchaseDate = c.ItemClients?.Any() == true 
+                    LastPurchaseDate = c.ItemClients?.Any() == true
                     ? c.ItemClients.Max(ic => ic.PurchasedDate)
                     : (DateTime?)null
                 })
@@ -201,26 +202,37 @@ namespace MyAppMVC.Controllers
 
             var monthlyData = new List<MonthlyFinancialViewModel>();
 
+            // Calculate monthly data
             for (int month = 1; month <= 12; month++)
             {
                 var monthSales = salesData.Where(s => s.PurchasedDate.Month == month).ToList();
+                var revenue = monthSales.Sum(s => s.Quantity * s.UnitPrice);
+                var itemsSold = monthSales.Sum(s => s.Quantity);
+                var transactionCount = monthSales.Count;
 
                 monthlyData.Add(new MonthlyFinancialViewModel
                 {
                     Month = new DateTime(year.Value, month, 1).ToString("MMM"),
-                    Revenue = monthSales.Sum(s => s.TotalPrice),
-                    ItemsSold = monthSales.Sum(s => s.Quantity),
-                    TransactionCount = monthSales.Count
+                    Revenue = revenue,
+                    ItemsSold = itemsSold,
+                    TransactionCount = transactionCount
                 });
             }
+
+            // Calculate totals
+            var totalRevenue = monthlyData.Sum(m => m.Revenue);
+            var totalItemsSold = monthlyData.Sum(m => m.ItemsSold);
+
+            // Get yearly comparison with growth calculations
+            var yearlyComparison = await GetYearlyComparison(year.Value);
 
             var viewModel = new FinancialReportViewModel
             {
                 Year = year.Value,
-                TotalRevenue = monthlyData.Sum(m => m.Revenue),
-                TotalItemsSold = monthlyData.Sum(m => m.ItemsSold),
+                TotalRevenue = totalRevenue,
+                TotalItemsSold = totalItemsSold,
                 MonthlyData = monthlyData,
-                YearlyComparison = await GetYearlyComparison(year.Value)
+                YearlyComparison = yearlyComparison
             };
 
             return View(viewModel);
@@ -285,22 +297,73 @@ namespace MyAppMVC.Controllers
         private async Task<List<YearlyComparisonViewModel>> GetYearlyComparison(int currentYear)
         {
             var comparison = new List<YearlyComparisonViewModel>();
+            var years = Enumerable.Range(currentYear - 2, 5).ToList();
 
-            for (int year = currentYear - 2; year <= currentYear; year++)
+            // Get all sales data for the year range
+            var allYearsSales = await _context.ItemClients
+                .Where(ic => ic.PurchasedDate != null && years.Contains(ic.PurchasedDate.Year))
+                .GroupBy(ic => ic.PurchasedDate.Year)
+                .Select(g => new
+                {
+                    Year = g.Key,
+                    Revenue = g.Sum(ic => ic.Quantity * ic.UnitPrice),  // Changed here
+                    ItemsSold = g.Sum(ic => ic.Quantity),
+                    TransactionCount = g.Count()
+                })
+                .ToListAsync();
+
+            double previousYearRevenue = 0;
+
+            foreach (var year in years)
             {
-                var yearSales = await _context.ItemClients
-                    .Where(ic => ic.PurchasedDate.Year == year)
-                    .ToListAsync();
+                var yearData = allYearsSales.FirstOrDefault(y => y.Year == year);
+                var revenue = yearData?.Revenue ?? 0;
+                var itemsSold = yearData?.ItemsSold ?? 0;
+                var transactionCount = yearData?.TransactionCount ?? 0;
+
+                // Calculate growth percentage
+                double growth = 0;
+                if (previousYearRevenue > 0)
+                {
+                    growth = ((revenue - previousYearRevenue) / previousYearRevenue) * 100;
+                }
+
+                // Calculate average revenue per item
+                double avgRevenuePerItem = itemsSold > 0 ? revenue / itemsSold : 0;
+
+                // Determine performance rating based on revenue and growth
+                string performance = GetPerformanceRating(revenue, growth);
 
                 comparison.Add(new YearlyComparisonViewModel
                 {
                     Year = year,
-                    Revenue = yearSales.Sum(s => s.TotalPrice),
-                    Growth = year == currentYear - 2 ? 0 : 0 // Calculate growth percentage
+                    Revenue = revenue,
+                    Growth = growth,
+                    ItemsSold = itemsSold,
+                    TransactionCount = transactionCount,
+                    AvgRevenuePerItem = avgRevenuePerItem,
+                    Performance = performance
                 });
+
+                previousYearRevenue = revenue;
             }
 
             return comparison;
+        }
+
+        private string GetPerformanceRating(double revenue, double growth)
+        {
+            // Performance based on both revenue and growth
+            if (revenue >= 75000 && growth >= 15)
+                return "Excellent";
+            else if (revenue >= 50000 && growth >= 10)
+                return "Very Good";
+            else if (revenue >= 25000 && growth >= 5)
+                return "Good";
+            else if (revenue >= 10000 || growth > 0)
+                return "Average";
+            else
+                return "Below Average";
         }
 
         private async Task<object> GenerateReportData(ExportReportViewModel model)

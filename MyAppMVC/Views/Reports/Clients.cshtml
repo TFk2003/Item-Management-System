@@ -11,7 +11,7 @@
             <p class="text-muted">Client analytics and purchase behavior</p>
         </div>
         <div>
-            <a asp-controller="Client" asp-action="Create" class="btn btn-primary">
+            <a asp-controller="Clients" asp-action="Create" class="btn btn-primary">
                 <i class="bi bi-person-plus"></i> Add New Client
             </a>
         </div>
@@ -139,7 +139,7 @@
                             <div class="p-3 border rounded">
                                 <h2 class="text-warning">@GetClientCountByValue("low")</h2>
                                 <small>Low Value Clients</small>
-                                <div class="small text-muted">(<$100)</div>
+                                <div class="small text-muted">(<=$100)</div>
                             </div>
                         </div>
                     </div>
@@ -173,9 +173,15 @@
                             <span>Rare (Yearly)</span>
                         </div>
                         <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-primary" style="width: 40%">40%</div>
-                            <div class="progress-bar bg-info" style="width: 35%">35%</div>
-                            <div class="progress-bar bg-warning" style="width: 25%">25%</div>
+                            @{
+                                var frequencyData = GetPurchaseFrequencyData();
+                                var regularPercent = Model.TotalClients > 0 ? (frequencyData.Regular * 100.0 / Model.TotalClients) : 0;
+                                var occasionalPercent = Model.TotalClients > 0 ? (frequencyData.Occasional * 100.0 / Model.TotalClients) : 0;
+                                var rarePercent = Model.TotalClients > 0 ? (frequencyData.Rare * 100.0 / Model.TotalClients) : 0;
+                            }
+                            <div class="progress-bar bg-primary" style="width: @(regularPercent)%">@frequencyData.Regular (@(regularPercent.ToString("F0"))%)</div>
+                            <div class="progress-bar bg-info" style="width: @(occasionalPercent)%">@frequencyData.Occasional (@(occasionalPercent.ToString("F0"))%)</div>
+                            <div class="progress-bar bg-warning" style="width: @(rarePercent)%">@frequencyData.Rare (@(rarePercent.ToString("F0"))%)</div>
                         </div>
                     </div>
                 </div>
@@ -239,15 +245,15 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a asp-controller="Client" asp-action="Details" asp-route-id="@client.Id"
+                                        <a asp-controller="Clients" asp-action="Details" asp-route-id="@client.Id"
                                            class="btn btn-outline-info" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-controller="Client" asp-action="Edit" asp-route-id="@client.Id"
+                                        <a asp-controller="Clients" asp-action="Edit" asp-route-id="@client.Id"
                                            class="btn btn-outline-primary" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a asp-controller="Report" asp-action="ClientPurchaseHistory"
+                                        <a asp-controller="Transaction" asp-action="ClientHistory" asp-route-id="@client.Id"
                                            class="btn btn-outline-success" title="Purchase History">
                                             <i class="bi bi-receipt"></i>
                                         </a>
@@ -309,6 +315,32 @@
             "low" => Model.Clients.Count(c => (c.ItemClients?.Sum(ic => ic.TotalPrice) ?? 0) < 100),
             _ => 0
         };
+    }
+
+    (int Regular, int Occasional, int Rare) GetPurchaseFrequencyData()
+    {
+        var now = DateTime.Now;
+        int regular = 0, occasional = 0, rare = 0;
+
+        foreach (var client in Model.Clients)
+        {
+            if (client.ItemClients == null || !client.ItemClients.Any())
+                continue;
+
+            var lastPurchase = client.ItemClients.Max(ic => ic.PurchasedDate);
+            var daysSinceLastPurchase = (now - lastPurchase).TotalDays;
+
+            // Categorize based on recency
+            if (daysSinceLastPurchase <= 30) // Purchased in last month
+                regular++;
+            else if (daysSinceLastPurchase <= 90) // Purchased in last quarter
+                occasional++;
+            else // Purchased over 90 days ago
+                rare++;
+        }
+     
+
+        return (regular, occasional, rare);
     }
 }
 

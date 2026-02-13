@@ -46,54 +46,58 @@
             @if (Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                     <table class="table table-hover" id="itemsTable">
                         <thead class="table-light">
                             <tr>
                                 <th>
                                     <a href="#" class="sort-link" data-sort="name">
-                                        <i class="bi bi-arrow-down-up"></i> @Html.DisplayNameFor(model => model.Name)
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> @Html.DisplayNameFor(model => model.Name)
                                     </a>
                                 </th>
                                 <th>
                                     @Html.DisplayNameFor(model => model.Description)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.Price)
+                                    <a href="#" class="sort-link" data-sort="price">
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> @Html.DisplayNameFor(model => model.Price)
+                                    </a>
                                 </th>
                                 <th>
-                                    @Html.DisplayNameFor(model => model.StockQuantity)
+                                    <a href="#" class="sort-link" data-sort="stock">
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> @Html.DisplayNameFor(model => model.StockQuantity)
+                                    </a>
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.ReorderLevel)
+                                    @Html.DisplayNameFor(model => model.ReorderLevel)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.SKU)
+                                    @Html.DisplayNameFor(model => model.SKU)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.Manufacturer)
+                                    @Html.DisplayNameFor(model => model.Manufacturer)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.Supplier)
+                                    @Html.DisplayNameFor(model => model.Supplier)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.Category)
+                                    @Html.DisplayNameFor(model => model.Category)
                                 </th>
                                 <th>
-									@Html.DisplayNameFor(model => model.SerialNumber)
+                                    @Html.DisplayNameFor(model => model.SerialNumber)
                                 </th>
                                 <th>
                                     <a href="#" class="sort-link" data-sort="status">
-                                        <i class="bi bi-arrow-down-up"></i> Status
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> Status
                                     </a>
                                 </th>
                                 <th>
-                                    <a href="#" class="sort-link" data-sort="date">
-                                        <i class="bi bi-arrow-down-up"></i> Created
+                                    <a href="#" class="sort-link" data-sort="created">
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> Created
                                     </a>
                                 </th>
                                 <th>
-                                    <a href="#" class="sort-link" data-sort="date">
-                                        <i class="bi bi-arrow-down-up"></i> Updated
+                                    <a href="#" class="sort-link" data-sort="updated">
+                                        <i class="bi bi-arrow-down-up sort-icon"></i> Updated
                                     </a>
                                 </th>
                                 <th>Clients Count</th>
@@ -103,7 +107,12 @@
                         <tbody>
                             @foreach (var item in Model)
                             {
-                                <tr class="category-row" data-status="@item.IsActive.ToString().ToLower()">
+                                <tr class="category-row" data-status="@item.IsActive.ToString().ToLower()"
+                                    data-name="@item.Name"
+                                    data-price="@item.Price"
+                                    data-stock="@item.StockQuantity"
+                                    data-created="@item.CreatedDate.Ticks"
+                                    data-updated="@(item.LastUpdated?.Ticks ?? 0)">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="category-color me-2" style="background-color: @GetCategoryColor(item.Id); width: 12px; height: 12px; border-radius: 50%;"></div>
@@ -113,14 +122,14 @@
                                     <td class="text-truncate" style="max-width: 250px;" title="@item.Description">
                                         @(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)
                                     </td>
-									<td>$@item.Price.ToString("N2")</td>
-									<td>@item.StockQuantity</td>
+                                    <td>$@item.Price.ToString("N2")</td>
+                                    <td>@item.StockQuantity</td>
                                     <td>@item.ReorderLevel</td>
-									<td>@item.SKU</td>
+                                    <td>@item.SKU</td>
                                     <td>@item.Manufacturer</td>
-									<td>@item.Supplier?.CompanyName</td>
+                                    <td>@item.Supplier?.CompanyName</td>
                                     <td>@item.Category?.Name</td>
-									<td>@item.SerialNumber?.SerialCode</td>
+                                    <td>@item.SerialNumber?.SerialCode</td>
                                     <td>
                                         <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
                                             @(item.IsActive ? "Active" : "Inactive")
@@ -132,10 +141,10 @@
                                         </small>
                                     </td>
                                     <td>
-										<small class="text-muted">
-											@item.LastUpdated?.ToString("MMM dd, yyyy")
+                                        <small class="text-muted">
+                                            @item.LastUpdated?.ToString("MMM dd, yyyy")
                                         </small>
-									</td>
+                                    </td>
                                     <td>
                                         <span class="badge bg-info">@(item.ItemClients?.Count ?? 0) clients</span>
                                     </td>
@@ -150,7 +159,7 @@
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a asp-action="ItemHistory" asp-controller="Transaction" asp-route-id="@item.Id"
-                                                class="btn btn-outline-success" data-bs-toggle="tooltip" title="History">
+                                               class="btn btn-outline-success" data-bs-toggle="tooltip" title="History">
                                                 <i class="bi bi-clock-history"></i>
                                             </a>
                                             <a asp-action="Delete" asp-route-id="@item.Id"
@@ -201,6 +210,7 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            let sortOrder = {};
 
             // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
@@ -235,10 +245,75 @@
             });
 
             // Simple sorting (you can enhance this with AJAX for server-side sorting)
+            // Sorting functionality
             $('.sort-link').click(function(e) {
                 e.preventDefault();
-                alert('Sorting functionality would be implemented here with AJAX call.');
 
+                const column = $(this).data('sort');
+                console.log(column)
+                const $tbody = $('#itemsTable tbody');
+                const rows = $tbody.find('tr.category-row').toArray();
+                console.log("sorting")
+                // Initialize sort order for this column if not exists
+                if (!sortOrder[column]) {
+                    sortOrder[column] = 'asc';
+                } else {
+                    // Toggle sort order
+                    sortOrder[column] = sortOrder[column] === 'asc' ? 'desc' : 'asc';
+                }
+
+                const isAscending = sortOrder[column] === 'asc';
+
+                // Update sort icons
+                $('.sort-link i').removeClass('bi-arrow-up bi-arrow-down').addClass('bi-arrow-down-up');
+                $(this).find('i').removeClass('bi-arrow-down-up')
+                    .addClass(isAscending ? 'bi-arrow-up' : 'bi-arrow-down');
+
+                // Sort the rows
+                rows.sort(function(a, b) {
+                    let aValue, bValue;
+                    console.log("sorting")
+                    console.log(column)
+                    switch(column) {
+                        case 'name':
+                            aValue = $(a).data('name').toLowerCase();
+                            bValue = $(b).data('name').toLowerCase();
+                            console.log(aValue)
+                            console.log(bValue)
+                            break;
+                        case 'price':
+                            aValue = parseFloat($(a).data('price'));
+                            bValue = parseFloat($(b).data('price'));
+                            break;
+                        case 'stock':
+                            aValue = parseInt($(a).data('stock'));
+                            bValue = parseInt($(b).data('stock'));
+                            break;
+                        case 'status':
+                            aValue = $(a).data('status') === true ? 1 : 0;
+                            bValue = $(b).data('status') === true ? 1 : 0;
+                            break;
+                        case 'created':
+                            aValue = parseInt($(a).data('created'));
+                            bValue = parseInt($(b).data('created'));
+                            break;
+                        case 'updated':
+                            aValue = parseInt($(a).data('updated'));
+                            bValue = parseInt($(b).data('updated'));
+                            break;
+                        default:
+                            return 0;
+                    }
+
+                    if (aValue < bValue) return isAscending ? -1 : 1;
+                    if (aValue > bValue) return isAscending ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-append sorted rows
+                $.each(rows, function(index, row) {
+                    $tbody.append(row);
+                });
             });
         });
     </script>
@@ -260,6 +335,30 @@
         .btn-group .btn {
             border-radius: 4px !important;
             margin: 0 2px;
+        }
+
+        .sort-link {
+            text-decoration: none;
+            color: inherit;
+            user-select: none;
+        }
+
+        .sort-link:hover {
+            color: #3498db;
+        }
+
+        .sort-icon {
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .sort-link:hover .sort-icon {
+            opacity: 1;
+        }
+
+        .bi-arrow-up, .bi-arrow-down {
+            opacity: 1 !important;
+            color: #3498db;
         }
     </style>
 }

@@ -2,28 +2,18 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyAppMVC.Data;
+using MyAppMVC.IServices;
 using MyAppMVC.Models;
 using MyAppMVC.ViewModels;
 
 namespace MyAppMVC.Controllers
 {
-    public class ItemController : Controller
+    public class ItemController(DatabaseContext databaseContext, ItemIService itemService, SupplierIService supplierService) : Controller
     {
-        private readonly DatabaseContext databaseContext;
-
-        public ItemController(DatabaseContext databaseContext)
-        {
-            this.databaseContext = databaseContext;
-        }
 
         public async Task<IActionResult> Index()
         {
-            var items = await databaseContext.Items
-                .Include(s => s.SerialNumber)
-                .Include(c => c.Category)
-                .Include(i => i.ItemClients)
-                .Include(s => s.Supplier)
-                .ToListAsync();
+            var items = await itemService.getAllItem();
             return View(items);
         }
 
@@ -35,6 +25,7 @@ namespace MyAppMVC.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
             [Bind("Id,Name,Description,Price,StockQuantity,ReorderLevel,SKU,Manufacturer,CategoryId,SupplierId")] Item item
             , string serialCode, string serialName,
@@ -43,30 +34,8 @@ namespace MyAppMVC.Controllers
             if (ModelState.IsValid)
             {
                 try 
-                { 
-                    // Ensure SerialNumber is associated with the Item
-                    if (!string.IsNullOrEmpty(serialCode))
-                    {
-                        var serialNumber = new SerialNumber
-                        {
-                            SerialCode = serialCode,
-                            Name = serialName,
-                            WarrantyInfo = warrantyInfo,
-                            ManufactureDate = manufactureDate,
-                            ExpiryDate = expiryDate,
-                            ItemId = item.Id
-                        };
-
-                        // Add serial number to context first
-                        databaseContext.SerialNumbers.Add(serialNumber);
-                        await databaseContext.SaveChangesAsync(); // Save to get ID
-
-                        // Assign the serial number to the item
-                        item.SerailId = serialNumber.Id;
-                    }
-
-                    databaseContext.Add(item);
-                    await databaseContext.SaveChangesAsync();
+                {
+                    await itemService.addItem(item, serialCode, serialName, warrantyInfo, manufactureDate, expiryDate);
 
                     TempData["SuccessMessage"] = $"Item '{item.Name}' created successfully!";
                     return RedirectToAction("Index");
@@ -77,6 +46,7 @@ namespace MyAppMVC.Controllers
                     ModelState.AddModelError("", $"Error creating item: {ex.Message}");
                 }
             }
+            
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
             ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
 
@@ -88,11 +58,7 @@ namespace MyAppMVC.Controllers
             ViewBag.Categories = new SelectList(databaseContext.Categories, "Id", "Name");
             ViewBag.Suppliers = new SelectList(databaseContext.Suppliers, "Id", "CompanyName");
 
-            var item = await databaseContext.Items
-                .Include(s => s.SerialNumber)
-                .Include(c => c.Category)
-                .Include(s => s.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var item = await itemService.getItemByIdWithSCS(id);
             
             if (item == null)
             {
@@ -116,69 +82,8 @@ namespace MyAppMVC.Controllers
                 try
                 {
                     // Preserve CreatedDate and add LastUpdated
-                    var existingItem = await databaseContext.Items
-                        .Include(i => i.SerialNumber)
-                        .FirstOrDefaultAsync(i => i.Id == id);
-
-                    if (existingItem == null)
-                    {
-                        return NotFound();
-                    }
-
-                    existingItem.Name = item.Name;
-                    existingItem.Description = item.Description;
-                    existingItem.Price = item.Price;
-                    existingItem.StockQuantity = item.StockQuantity;
-                    existingItem.ReorderLevel = item.ReorderLevel;
-                    existingItem.SKU = item.SKU;
-                    existingItem.Manufacturer = item.Manufacturer;
-                    existingItem.CategoryId = item.CategoryId;
-                    existingItem.SupplierId = item.SupplierId;
-                    existingItem.IsActive = item.IsActive;
-                    existingItem.LastUpdated = DateTime.UtcNow;
-
-                    if (!string.IsNullOrEmpty(serialCode))
-                    {
-                        if (existingItem.SerialNumber != null)
-                        {
-                            // Update existing serial number
-                            existingItem.SerialNumber.SerialCode = serialCode;
-                            existingItem.SerialNumber.Name = serialName;
-                            existingItem.SerialNumber.WarrantyInfo = warrantyInfo;
-                            existingItem.SerialNumber.ManufactureDate = manufactureDate;
-                            existingItem.SerialNumber.ExpiryDate = expiryDate;
-                            existingItem.SerialNumber.ItemId = id;
-                        }
-                        else
-                        {
-                            // Create new serial number
-                            var serialNumber = new SerialNumber
-                            {
-                                SerialCode = serialCode,
-                                Name = serialName,
-                                WarrantyInfo = warrantyInfo,
-                                ManufactureDate = manufactureDate,
-                                ExpiryDate = expiryDate,
-                                ItemId = id
-                            };
-
-                            databaseContext.SerialNumbers.Add(serialNumber);
-                            await databaseContext.SaveChangesAsync(); // Save to get ID
-
-                            existingItem.SerailId = serialNumber.Id;
-                        }
-                    }
-                    else
-                    {
-                        // Remove serial number if serialCode is empty
-                        if (existingItem.SerialNumber != null)
-                        {
-                            databaseContext.SerialNumbers.Remove(existingItem.SerialNumber);
-                            existingItem.SerailId = null;
-                        }
-                    }
-                    databaseContext.Update(existingItem);
-                    await databaseContext.SaveChangesAsync();
+                    await itemService.updateItem(id, item, serialCode, serialName, warrantyInfo, manufactureDate,
+                        expiryDate);
 
                     TempData["SuccessMessage"] = $"Item '{item.Name}' updated successfully!";
                     return RedirectToAction("Index");
@@ -208,12 +113,7 @@ namespace MyAppMVC.Controllers
 
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await databaseContext.Items
-                .Include(s => s.SerialNumber)
-                .Include(c => c.Category)
-                .Include(s => s.Supplier)
-                .Include(i => i.ItemClients)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var item = await itemService.getItemByIdWithSCSI(id);
 
             if (item == null)
             {
@@ -226,28 +126,13 @@ namespace MyAppMVC.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var item = await databaseContext.Items.FirstOrDefaultAsync(x => x.Id == id);
-            if (item == null)
-            {
-                return RedirectToAction("Index");
-            }
-            databaseContext.Items.Remove(item);
-            await databaseContext.SaveChangesAsync();
+            await itemService.deleteItem(id);
+
             return RedirectToAction("Index");
         }
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var item = await databaseContext.Items
-                .Include(s => s.SerialNumber)
-                .Include(c => c.Category)
-                .Include(s => s.Supplier)
-                .Include(i => i.ItemClients).ThenInclude(ic => ic.Client)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var item = await itemService.getItemByIdWithSCSIC(id);
             if (item == null)
             {
                 return NotFound();
@@ -258,19 +143,7 @@ namespace MyAppMVC.Controllers
 
         public async Task<IActionResult> LowStock(int? threshold = null)
         {
-            var query = databaseContext.Items
-                .Include(i => i.Category)
-                .Include(i => i.SerialNumber)
-                .Where(i => i.StockQuantity < i.ReorderLevel);
-
-            if (threshold.HasValue)
-            {
-                query = query.Where(i => i.StockQuantity < threshold.Value);
-            }
-
-            var lowStockItems = await query
-                .OrderBy(i => i.StockQuantity)
-                .ToListAsync();
+            var lowStockItems = await itemService.lowStockItems(threshold);
 
             ViewBag.Threshold = threshold;
             ViewBag.TotalLowStockItems = lowStockItems.Count;
@@ -280,10 +153,8 @@ namespace MyAppMVC.Controllers
 
         public async Task<IActionResult> Reorder(int id)
         {
-            var item = await databaseContext.Items
-                .Include(i => i.Category)
-                .Include(i => i.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var item = await itemService.getItemByIdWithCategoryAndSupplier(id);
+
             if (item == null)
             {
                 return NotFound();
@@ -297,7 +168,7 @@ namespace MyAppMVC.Controllers
                 ReorderLevel = item.ReorderLevel,
                 RecommendedReorder = Math.Max(item.ReorderLevel * 2 - item.StockQuantity, 10),
                 SupplierId = item.SupplierId,
-                Suppliers = await databaseContext.Suppliers.ToListAsync()
+                Suppliers = await supplierService.getAllSuppliers()
             };
 
             return View(viewModel);
@@ -308,13 +179,10 @@ namespace MyAppMVC.Controllers
         {
             if (ModelState.IsValid)
             {
-                var item = await databaseContext.Items.FindAsync(reorderViewModel.ItemId);
+                var item = await itemService.getItemById(reorderViewModel.ItemId);
                 if (item != null)
                 {
-                    item.StockQuantity += reorderViewModel.QuantityToOrder;
-                    item.LastUpdated = DateTime.UtcNow;
-
-                    await databaseContext.SaveChangesAsync();
+                    await itemService.reorderItem(item, reorderViewModel);
 
                     TempData["Success Message"] = $"{reorderViewModel.QuantityToOrder} units of {item.Name} have been ordered and stock updated.";
 
@@ -322,28 +190,21 @@ namespace MyAppMVC.Controllers
                 }
             }
 
-            reorderViewModel.Suppliers = await databaseContext.Suppliers.ToListAsync();
+            reorderViewModel.Suppliers = await supplierService.getAllSuppliers();
             return View(reorderViewModel);
         }
 
         public async Task<IActionResult> QuickReorder(int id, int quantity = 10)
         {
-            var item = await databaseContext.Items.FindAsync(id);
-            if( item == null)
-            {
-                return NotFound();
-            }
-            item.StockQuantity += quantity;
-            item.LastUpdated = DateTime.UtcNow;
-            await databaseContext.SaveChangesAsync();
+            await itemService.quickReorder(id, quantity);
 
-            TempData["SuccessMessage"] = $"{quantity} units of item {item.Name} have been added to stock";
+            TempData["SuccessMessage"] = $"{quantity} units of item {id} have been added to stock";
             return RedirectToAction(nameof(LowStock));
         }
 
         private bool ItemExists(int id)
         {
-            return databaseContext.Items.Any(e => e.Id == id);
+            return itemService.itemExist(id);
         }
 
     }
